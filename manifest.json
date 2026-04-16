@@ -1,0 +1,22 @@
+{
+  "name": "MediAssist Pro",
+  "short_name": "MediAssist",
+  "description": "Mobile Medical Attendant App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f4c75",
+  "theme_color": "#0f4c75",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%230f4c75'/%3E%3Cpath d='M96 44a8 8 0 0 1 8 8v28h28a8 8 0 0 1 0 16h-28v28a8 8 0 0 1-16 0v-28H60a8 8 0 0 1 0-16h28V52a8 8 0 0 1 8-8z' fill='white'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230f4c75'/%3E%3Cpath d='M256 108a20 20 0 0 1 20 20v88h88a20 20 0 0 1 0 40h-88v88a20 20 0 0 1-40 0v-88h-88a20 20 0 0 1 0-40h88v-88a20 20 0 0 1 20-20z' fill='white'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
