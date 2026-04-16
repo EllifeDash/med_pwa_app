@@ -350,6 +350,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
           <div style="font-size:18px;font-weight:700" id="hpFullName"></div>
           <div class="tsm ts" id="hpDetails"></div>
           <div class="sgrid mt8" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0" id="hpStats"></div>
+          <button id="hpNewVisitBtn" class="btn bp bsm mt12" onclick="">+ New Visit for this Patient</button>
         </div>
       </div>
     </div>
@@ -455,6 +456,10 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
       </button>
+      <button class="bb" onclick="logout()" style="color:var(--err)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
     </div>
   </nav>
 </div>
@@ -533,7 +538,6 @@ let historyPatientId = null;
 // ════════════════════════════════════════
 window.addEventListener('load',()=>{
   if(!DB.get('ma_services')) DB.set('ma_services', gSvc());
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
   const s = gSet();
   document.getElementById('wTagline').textContent = s.tagline||'Your Mobile Medical Companion';
   document.getElementById('iName').value = s.name||'';
@@ -690,9 +694,8 @@ function openHistory(pid){
   renderPatientVisits(vis);
   updateStorageBar(pid);
 
-  // Action button for new visit
-  document.getElementById('hpStats').insertAdjacentHTML('afterend',
-    `<button class="btn bp bsm mt12" onclick="prefillPt('${pid}')">+ New Visit for this Patient</button>`);
+  // Update the static button's onclick — never inject a new button
+  document.getElementById('hpNewVisitBtn').onclick = function(){ prefillPt(pid); };
 
   go('history', null);
 }
@@ -854,10 +857,15 @@ function handlePatientPhoto(input){
     const pts=gPts(), p=pts.find(x=>x.id===historyPatientId);
     if(!p) return;
     p.photo=e.target.result;
-    DB.set('ma_patients',pts);
+    const saved=DB.set('ma_patients',pts);
+    if(!saved){ toast('Storage full — cannot save photo','danger'); return; }
+    // Re-read from storage to confirm it stuck, then update avatar
+    const confirmedPts=gPts(), confirmedP=confirmedPts.find(x=>x.id===historyPatientId);
     const hpAv=document.getElementById('hpAv');
-    hpAv.innerHTML=`<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    renderPatients();
+    if(confirmedP && confirmedP.photo){
+      hpAv.innerHTML=`<img src="${confirmedP.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    }
+    input.value='';
     toast('Photo updated!');
   };
   r.readAsDataURL(file);
@@ -903,7 +911,7 @@ function suggestPt(){
 document.addEventListener('click',e=>{if(!e.target.closest('#ptSugg')&&e.target.id!=='fName') document.getElementById('ptSugg').style.display='none';});
 
 function prefillPt(id){
-  closeMo('patientModal');
+  //closeMo('patientModal');
   activePtId=id;
   const p=gPts().find(x=>x.id===id); if(!p) return;
   go('addVisit',null);
@@ -1176,6 +1184,35 @@ function toast(msg,t='ok'){
   const el=document.getElementById('toast');
   el.textContent=msg; el.style.background=t==='danger'?'#ef4444':'#1a2332'; el.style.opacity=1;
   clearTimeout(tt); tt=setTimeout(()=>el.style.opacity=0,2600);
+}
+</script>
+  <script>
+if ('serviceWorker' in navigator) {
+  let newWorker;
+
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+
+    reg.addEventListener('updatefound', () => {
+      newWorker = reg.installing;
+
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdatePopup();
+        }
+      });
+    });
+  });
+
+  function showUpdatePopup() {
+    const update = confirm("New update available. Update now?");
+    if (update && newWorker) {
+      newWorker.postMessage('SKIP_WAITING');
+    }
+  }
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
 }
 </script>
 </body>
