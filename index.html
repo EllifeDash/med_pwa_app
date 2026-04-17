@@ -350,7 +350,6 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
           <div style="font-size:18px;font-weight:700" id="hpFullName"></div>
           <div class="tsm ts" id="hpDetails"></div>
           <div class="sgrid mt8" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0" id="hpStats"></div>
-          <button id="hpNewVisitBtn" class="btn bp bsm mt12" onclick="">+ New Visit for this Patient</button>
         </div>
       </div>
     </div>
@@ -456,10 +455,6 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
       </button>
-      <button class="bb" onclick="logout()" style="color:var(--err)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Logout
-      </button>
     </div>
   </nav>
 </div>
@@ -515,18 +510,77 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 
 <script>
 // ════════════════════════════════════════
-// DATA LAYER
+// DATA LAYER — IndexedDB (async, ~50MB+ storage)
+// Migrations: on first run, copies any existing localStorage data then clears it.
 // ════════════════════════════════════════
-const DB = {
-  get(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
-};
-function gSet(){return DB.get('ma_settings')||{name:'Medical Attendant',rank:'Home Care Professional',businessName:'MediAssist Pro',tagline:'Your Mobile Medical Companion',phone:'',address:'',photo:''}}
-function gPts(){return DB.get('ma_patients')||[]}
-function gVis(){return DB.get('ma_visits')||[]}
-function gSvc(){return DB.get('ma_services')||[{id:1,name:'First Aid',price:300},{id:2,name:'Regular Checkup',price:500},{id:3,name:'Blood Sample Collection',price:400},{id:4,name:'Injection / Drip',price:600},{id:5,name:'Bandage Change',price:350},{id:6,name:'BP / Sugar Check',price:200},{id:7,name:'Medicine Delivery',price:100},{id:8,name:'Wound Cleaning',price:300},{id:9,name:'ECG',price:800},{id:10,name:'IV Cannula',price:700}]}
-function gHistNotes(pid){return DB.get('ma_hist_'+pid)||[]}
-function gDocs(pid){return DB.get('ma_docs_'+pid)||[]}
+const DB = (() => {
+  const DB_NAME = 'mediassist', DB_VER = 1, STORE = 'kv';
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => {
+        e.target.result.createObjectStore(STORE);
+      };
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function get(k) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(k);
+      req.onsuccess = () => res(req.result ?? null);
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function set(k, v) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(v, k);
+      tx.oncomplete = () => res(true);
+      tx.onerror = e => rej(e.target.error);
+    });
+  }
+
+  // Migrate from localStorage on first boot
+  async function migrate() {
+    const KEYS = ['ma_settings','ma_patients','ma_visits','ma_services'];
+    // also migrate any per-patient hist/docs keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('ma_hist_') || k.startsWith('ma_docs_'))) KEYS.push(k);
+    }
+    const migrated = await get('__migrated__');
+    if (migrated) return;
+    for (const k of KEYS) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) { await set(k, JSON.parse(raw)); localStorage.removeItem(k); }
+      } catch(e) {}
+    }
+    await set('__migrated__', true);
+  }
+
+  return { get, set, migrate };
+})();
+
+// Default values
+const DEFAULT_SVC = [{id:1,name:'First Aid',price:300},{id:2,name:'Regular Checkup',price:500},{id:3,name:'Blood Sample Collection',price:400},{id:4,name:'Injection / Drip',price:600},{id:5,name:'Bandage Dressing',price:350},{id:6,name:'BP / Sugar Check',price:200},{id:7,name:'Medicine Delivery',price:100},{id:8,name:'Wound Cleaning',price:300},{id:9,name:'ECG',price:800},{id:10,name:'IV Cannula',price:700}];
+const DEFAULT_SET = {name:'Medical Attendant',rank:'Home Care Professional',businessName:'MediAssist Pro',tagline:'Your Mobile Medical Companion',phone:'',address:'',photo:''};
+
+async function gSet(){return (await DB.get('ma_settings')) || DEFAULT_SET;}
+async function gPts(){return (await DB.get('ma_patients')) || [];}
+async function gVis(){return (await DB.get('ma_visits')) || [];}
+async function gSvc(){return (await DB.get('ma_services')) || DEFAULT_SVC;}
+async function gHistNotes(pid){return (await DB.get('ma_hist_'+pid)) || [];}
+async function gDocs(pid){return (await DB.get('ma_docs_'+pid)) || [];}
 
 let selSvcs = {};   // {id: price}
 let activePtId = null;
@@ -536,17 +590,19 @@ let historyPatientId = null;
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
-window.addEventListener('load',()=>{
-  if(!DB.get('ma_services')) DB.set('ma_services', gSvc());
-  const s = gSet();
-  document.getElementById('wTagline').textContent = s.tagline||'Your Mobile Medical Companion';
-  document.getElementById('iName').value = s.name||'';
-  document.getElementById('iRank').value = s.rank||'';
+window.addEventListener('load', async () => {
+  await DB.migrate();
+  const existing = await DB.get('ma_services');
+  if (!existing) await DB.set('ma_services', DEFAULT_SVC);
+  const s = await gSet();
+  document.getElementById('wTagline').textContent = s.tagline || 'Your Mobile Medical Companion';
+  document.getElementById('iName').value = s.name || '';
+  document.getElementById('iRank').value = s.rank || '';
   updateWelcomeInitials();
-  if(s.photo) setWelcomePhoto(s.photo);
+  if (s.photo) setWelcomePhoto(s.photo);
   const now = new Date();
   document.getElementById('fDate').valueAsDate = now;
-  document.getElementById('fTime').value = now.toTimeString().slice(0,5);
+  document.getElementById('fTime').value = now.toTimeString().slice(0, 5);
 });
 
 // ════════════════════════════════════════
@@ -565,21 +621,21 @@ function setWelcomePhoto(b64){
 function handleWelcomePhoto(input){
   const file = input.files[0]; if(!file) return;
   const r = new FileReader();
-  r.onload = e=>{
+  r.onload = async e=>{
     const b64 = e.target.result;
     setWelcomePhoto(b64);
-    const s=gSet(); s.photo=b64; DB.set('ma_settings',s);
+    const s=await gSet(); s.photo=b64; await DB.set('ma_settings',s);
   };
   r.readAsDataURL(file);
 }
-function saveProfile(){
-  const s=gSet();
+async function saveProfile(){
+  const s=await gSet();
   s.name=document.getElementById('iName').value.trim()||s.name;
   s.rank=document.getElementById('iRank').value.trim()||s.rank;
-  DB.set('ma_settings',s); toast('Profile saved!');
+  await DB.set('ma_settings',s); toast('Profile saved!');
 }
-function enterApp(){
-  saveProfile();
+async function enterApp(){
+  await saveProfile();
   document.getElementById('ws').style.display='none';
   document.getElementById('app').classList.add('active');
   go('dashboard',null);
@@ -608,13 +664,13 @@ function go(pg, btn){
 // ════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════
-function renderDash(){
-  const pts=gPts(), vis=gVis();
+async function renderDash(){
+  const pts=await gPts(), vis=await gVis();
   const tod=new Date().toISOString().slice(0,10);
   const todV=vis.filter(v=>v.date===tod);
   const totRev=vis.reduce((s,v)=>s+(v.net||0),0);
   const todRev=todV.reduce((s,v)=>s+(v.net||0),0);
-  const s=gSet();
+  const s=await gSet();
   const now=new Date(), h=now.getHours();
   document.getElementById('dashGreet').textContent=`Good ${h<12?'Morning':h<17?'Afternoon':'Evening'}, ${s.name.split(' ')[0]||'Doctor'}!`;
   document.getElementById('dashDate').textContent=now.toLocaleDateString('en-PK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -638,10 +694,10 @@ function renderDash(){
 // ════════════════════════════════════════
 // PATIENTS
 // ════════════════════════════════════════
-function renderPatients(){
+async function renderPatients(){
   const q=(document.getElementById('pSearch')?.value||'').toLowerCase();
-  let pts=gPts(); if(q) pts=pts.filter(p=>p.name.toLowerCase().includes(q)||(p.phone||'').includes(q)||(p.address||'').toLowerCase().includes(q));
-  const vis=gVis(); const el=document.getElementById('patientsList');
+  let pts=await gPts(); if(q) pts=pts.filter(p=>p.name.toLowerCase().includes(q)||(p.phone||'').includes(q)||(p.address||'').toLowerCase().includes(q));
+  const vis=await gVis(); const el=document.getElementById('patientsList');
   if(!pts.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>${q?'No patients found':'No patients yet'}</p><span>${q?'Try a different search':'Add a new visit to create a patient record'}</span></div>`;return;}
   el.innerHTML=pts.map(p=>{
     const pvs=vis.filter(v=>v.patientId===p.id);
@@ -662,10 +718,10 @@ function renderPatients(){
 // ════════════════════════════════════════
 // HISTORY PAGE
 // ════════════════════════════════════════
-function openHistory(pid){
+async function openHistory(pid){
   historyPatientId = pid;
-  const p=gPts().find(x=>x.id===pid); if(!p) return;
-  const vis=gVis().filter(v=>v.patientId===pid).sort((a,b)=>b.date.localeCompare(a.date));
+  const p=(await gPts()).find(x=>x.id===pid); if(!p) return;
+  const vis=(await gVis()).filter(v=>v.patientId===pid).sort((a,b)=>b.date.localeCompare(a.date));
   const total=vis.reduce((s,v)=>s+(v.net||0),0);
 
   document.getElementById('hpName').textContent = p.name;
@@ -694,14 +750,15 @@ function openHistory(pid){
   renderPatientVisits(vis);
   updateStorageBar(pid);
 
-  // Update the static button's onclick — never inject a new button
-  document.getElementById('hpNewVisitBtn').onclick = function(){ prefillPt(pid); };
+  // Action button for new visit
+  document.getElementById('hpStats').insertAdjacentHTML('afterend',
+    `<button class="btn bp bsm mt12" onclick="prefillPt('${pid}')">+ New Visit for this Patient</button>`);
 
   go('history', null);
 }
 
-function renderHistNotes(){
-  const notes = gHistNotes(historyPatientId).sort((a,b)=>b.date.localeCompare(a.date));
+async function renderHistNotes(){
+  const notes = (await gHistNotes(historyPatientId)).sort((a,b)=>b.date.localeCompare(a.date));
   const el = document.getElementById('histNotes');
   if(!notes.length){ el.innerHTML=`<div class="empty" style="padding:16px 0"><p style="font-size:14px">No history notes yet</p><span>Add diagnoses, allergies, conditions…</span></div>`; return; }
   const catColors = {'Diagnosis':'b-red','Allergy':'b-amber','Chronic Condition':'b-red','Medication':'b-blue','Lab Result':'b-green','General Note':'b-gray','Other':'b-gray'};
@@ -729,8 +786,8 @@ function showAddHistNote(){
   document.getElementById('hnDetails').value = '';
   openMo('histModal');
 }
-function editHistNote(id){
-  const notes = gHistNotes(historyPatientId);
+async function editHistNote(id){
+  const notes = await gHistNotes(historyPatientId);
   const n = notes.find(x=>x.id===id); if(!n) return;
   editingHistNoteId = id;
   document.getElementById('histModalTitle').textContent = 'Edit History Note';
@@ -740,10 +797,10 @@ function editHistNote(id){
   document.getElementById('hnDetails').value = n.details||'';
   openMo('histModal');
 }
-function saveHistNote(){
+async function saveHistNote(){
   const title = document.getElementById('hnTitle').value.trim();
   if(!title){ toast('Enter a title','danger'); return; }
-  const notes = gHistNotes(historyPatientId);
+  const notes = await gHistNotes(historyPatientId);
   const note = {
     id: editingHistNoteId || 'hn_'+Date.now(),
     date: document.getElementById('hnDate').value,
@@ -752,38 +809,42 @@ function saveHistNote(){
   };
   if(editingHistNoteId){ const i=notes.findIndex(x=>x.id===editingHistNoteId); if(i>-1) notes[i]=note; }
   else notes.push(note);
-  DB.set('ma_hist_'+historyPatientId, notes);
+  await DB.set('ma_hist_'+historyPatientId, notes);
   closeMo('histModal'); renderHistNotes(); toast('Note saved!');
 }
-function delHistNote(id){
+async function delHistNote(id){
   if(!confirm('Delete this note?')) return;
-  const notes = gHistNotes(historyPatientId).filter(n=>n.id!==id);
-  DB.set('ma_hist_'+historyPatientId, notes); renderHistNotes(); toast('Note deleted');
+  const notes = (await gHistNotes(historyPatientId)).filter(n=>n.id!==id);
+  await DB.set('ma_hist_'+historyPatientId, notes); renderHistNotes(); toast('Note deleted');
 }
 
 // DOCUMENTS
-function handleDocUpload(input){
+async function handleDocUpload(input){
   const files = Array.from(input.files); if(!files.length) return;
-  const docs = gDocs(historyPatientId);
   let done = 0;
-  files.forEach(file=>{
-    if(file.size > 2*1024*1024){ toast('File too large (max 2MB): '+file.name,'danger'); done++; if(done===files.length) input.value=''; return; }
-    const r = new FileReader();
-    r.onload = e=>{
-      const ok = DB.set('ma_docs_'+historyPatientId, [...gDocs(historyPatientId), {
-        id:'doc_'+Date.now()+'_'+Math.random().toString(36).slice(2),
-        name: file.name, type: file.type, size: file.size,
-        data: e.target.result, uploadedAt: new Date().toISOString()
-      }]);
-      if(!ok){ toast('Storage full! Delete some documents to free space.','danger'); }
-      done++; if(done===files.length){ renderDocs(); updateStorageBar(historyPatientId); input.value=''; toast('Document uploaded!'); }
-    };
-    r.onerror = ()=>{ done++; toast('Failed to read '+file.name,'danger'); };
-    r.readAsDataURL(file);
-  });
+  for(const file of files){
+    if(file.size > 10*1024*1024){ toast('File too large (max 10MB): '+file.name,'danger'); done++; continue; }
+    await new Promise(resolve=>{
+      const r = new FileReader();
+      r.onload = async e=>{
+        const currentDocs = await gDocs(historyPatientId);
+        await DB.set('ma_docs_'+historyPatientId, [...currentDocs, {
+          id:'doc_'+Date.now()+'_'+Math.random().toString(36).slice(2),
+          name: file.name, type: file.type, size: file.size,
+          data: e.target.result, uploadedAt: new Date().toISOString()
+        }]);
+        done++;
+        resolve();
+      };
+      r.onerror = ()=>{ done++; toast('Failed to read '+file.name,'danger'); resolve(); };
+      r.readAsDataURL(file);
+    });
+  }
+  renderDocs(); updateStorageBar(historyPatientId); input.value='';
+  toast(done > 1 ? done+' documents uploaded!' : 'Document uploaded!');
 }
-function renderDocs(){
-  const docs = gDocs(historyPatientId);
+async function renderDocs(){
+  const docs = await gDocs(historyPatientId);
   const el = document.getElementById('docsList');
   if(!docs.length){ el.innerHTML=`<div class="empty" style="padding:12px 0"><p style="font-size:14px">No documents yet</p><span>Upload medical reports, images, prescriptions…</span></div>`; return; }
   el.innerHTML = docs.map(d=>{
@@ -802,13 +863,13 @@ function renderDocs(){
     </div>`;
   }).join('');
 }
-function delDoc(id){
+async function delDoc(id){
   if(!confirm('Delete this document?')) return;
-  const docs = gDocs(historyPatientId).filter(d=>d.id!==id);
-  DB.set('ma_docs_'+historyPatientId, docs); renderDocs(); updateStorageBar(historyPatientId); toast('Deleted');
+  const docs = (await gDocs(historyPatientId)).filter(d=>d.id!==id);
+  await DB.set('ma_docs_'+historyPatientId, docs); renderDocs(); updateStorageBar(historyPatientId); toast('Deleted');
 }
-function previewDoc(id){
-  const d = gDocs(historyPatientId).find(x=>x.id===id); if(!d) return;
+async function previewDoc(id){
+  const d = (await gDocs(historyPatientId)).find(x=>x.id===id); if(!d) return;
   document.getElementById('docModalName').textContent = d.name;
   const isImg = d.type.startsWith('image/');
   if(isImg){
@@ -820,18 +881,24 @@ function previewDoc(id){
 }
 function fmtFileSize(b){if(b<1024)return b+'B';if(b<1024*1024)return(b/1024).toFixed(1)+'KB';return(b/1024/1024).toFixed(1)+'MB';}
 
-function updateStorageBar(pid){
+async function updateStorageBar(pid){
   const el = document.getElementById('storageBar');
-  // Estimate total storage used
-  let used = 0;
-  try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); used+=((localStorage.getItem(k)||'').length*2); } } catch(e){}
-  const maxBytes = 5*1024*1024; // 5MB
-  const pct = Math.min(100, Math.round(used/maxBytes*100));
   el.style.display = 'block';
-  document.getElementById('storPct').textContent = pct+'% of ~5MB used';
-  const fill = document.getElementById('storFill');
-  fill.style.width = pct+'%';
-  fill.className = 'stor-fill'+(pct>85?' danger':pct>65?' warn':'');
+  // Use StorageManager API if available for accurate IDB usage
+  if (navigator.storage && navigator.storage.estimate) {
+    const {usage, quota} = await navigator.storage.estimate();
+    const pct = Math.min(100, Math.round((usage||0)/(quota||1)*100));
+    const usedMB = ((usage||0)/1024/1024).toFixed(1);
+    const quotaMB = Math.round((quota||0)/1024/1024);
+    document.getElementById('storPct').textContent = usedMB+'MB of ~'+quotaMB+'MB used ('+pct+'%)';
+    const fill = document.getElementById('storFill');
+    fill.style.width = pct+'%';
+    fill.className = 'stor-fill'+(pct>85?' danger':pct>65?' warn':'');
+  } else {
+    document.getElementById('storPct').textContent = 'Storage: IndexedDB (large capacity)';
+    document.getElementById('storFill').style.width = '2%';
+    document.getElementById('storFill').className = 'stor-fill';
+  }
 }
 
 function renderPatientVisits(vis){
@@ -853,14 +920,13 @@ function renderPatientVisits(vis){
 function handlePatientPhoto(input){
   const file=input.files[0]; if(!file) return;
   const r=new FileReader();
-  r.onload=e=>{
-    const pts=gPts(), p=pts.find(x=>x.id===historyPatientId);
+  r.onload=async e=>{
+    const pts=await gPts(), p=pts.find(x=>x.id===historyPatientId);
     if(!p) return;
     p.photo=e.target.result;
-    const saved=DB.set('ma_patients',pts);
-    if(!saved){ toast('Storage full — cannot save photo','danger'); return; }
-    // Re-read from storage to confirm it stuck, then update avatar
-    const confirmedPts=gPts(), confirmedP=confirmedPts.find(x=>x.id===historyPatientId);
+    await DB.set('ma_patients',pts);
+    // Re-read to confirm persistence, then update avatar
+    const confirmedPts=await gPts(), confirmedP=confirmedPts.find(x=>x.id===historyPatientId);
     const hpAv=document.getElementById('hpAv');
     if(confirmedP && confirmedP.photo){
       hpAv.innerHTML=`<img src="${confirmedP.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
@@ -874,22 +940,22 @@ function handlePatientPhoto(input){
 // ════════════════════════════════════════
 // ADD VISIT
 // ════════════════════════════════════════
-function renderSvcTags(){
-  const svcs=gSvc();
+async function renderSvcTags(){
+  const svcs=await gSvc();
   document.getElementById('svcTags').innerHTML=svcs.map(s=>`
     <div class="stag ${selSvcs[s.id]!==undefined?'sel':''}" onclick="togSvc(${s.id})" id="st-${s.id}">${s.name} <span style="opacity:.7">Rs.${s.price}</span></div>`).join('');
   renderSvcTable();
 }
-function togSvc(id){
-  const s=gSvc().find(x=>x.id===id); if(!s) return;
+async function togSvc(id){
+  const svcs=await gSvc(); const s=svcs.find(x=>x.id===id); if(!s) return;
   if(selSvcs[id]!==undefined) delete selSvcs[id]; else selSvcs[id]=s.price;
   document.getElementById('st-'+id)?.classList.toggle('sel', selSvcs[id]!==undefined);
   renderSvcTable(); calcTotal();
 }
-function renderSvcTable(){
+async function renderSvcTable(){
   const keys=Object.keys(selSvcs); const el=document.getElementById('svcTable');
   if(!keys.length){el.innerHTML='';return;}
-  const svcs=gSvc();
+  const svcs=await gSvc();
   el.innerHTML=`<table class="tbl"><thead><tr><th>Service</th><th>Price (Rs.)</th></tr></thead><tbody>
     ${keys.map(id=>{const s=svcs.find(x=>x.id==id);return`<tr><td>${s?s.name:'Service'}</td><td><input type="number" value="${selSvcs[id]}" style="width:100px" oninput="selSvcs[${id}]=+this.value;calcTotal()"/></td></tr>`;}).join('')}
   </tbody></table>`;
@@ -900,20 +966,20 @@ function calcTotal(){
   document.getElementById('vTotal').textContent='Rs. '+sub.toLocaleString();
   document.getElementById('vNet').textContent='Rs. '+Math.max(0,sub-disc).toLocaleString();
 }
-function suggestPt(){
+async function suggestPt(){
   const q=document.getElementById('fName').value.toLowerCase().trim(); const el=document.getElementById('ptSugg');
   if(q.length<2){el.style.display='none';return;}
-  const m=gPts().filter(p=>p.name.toLowerCase().includes(q)).slice(0,5);
+  const m=(await gPts()).filter(p=>p.name.toLowerCase().includes(q)).slice(0,5);
   if(!m.length){el.style.display='none';return;}
   el.style.display='block';
   el.innerHTML=m.map(p=>`<div onclick="prefillPt('${p.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bd);font-size:14px"><strong>${p.name}</strong> <span class="ts">${p.age?p.age+' yrs':''} ${p.phone?'· '+p.phone:''}</span></div>`).join('');
 }
 document.addEventListener('click',e=>{if(!e.target.closest('#ptSugg')&&e.target.id!=='fName') document.getElementById('ptSugg').style.display='none';});
 
-function prefillPt(id){
+async function prefillPt(id){
   //closeMo('patientModal');
   activePtId=id;
-  const p=gPts().find(x=>x.id===id); if(!p) return;
+  const p=(await gPts()).find(x=>x.id===id); if(!p) return;
   go('addVisit',null);
   setTimeout(()=>{
     document.getElementById('fName').value=p.name;
@@ -935,11 +1001,11 @@ function resetForm(){
   document.getElementById('existingBanner').style.display='none';
   renderSvcTags(); calcTotal();
 }
-function saveVisit(){
+async function saveVisit(){
   const name=document.getElementById('fName').value.trim();
   if(!name){toast('Patient name is required','danger');return;}
   if(!Object.keys(selSvcs).length){toast('Select at least one service','danger');return;}
-  const pts=gPts(), vis=gVis(), svcs=gSvc();
+  const pts=await gPts(), vis=await gVis(), svcs=await gSvc();
   let pt;
   if(activePtId) pt=pts.find(p=>p.id===activePtId);
   if(!pt) pt=pts.find(p=>p.name.toLowerCase()===name.toLowerCase());
@@ -952,7 +1018,7 @@ function saveVisit(){
     pt.phone=document.getElementById('fPhone').value.trim()||pt.phone;
     pt.address=document.getElementById('fAddr').value.trim()||pt.address;
   }
-  DB.set('ma_patients',pts);
+  await DB.set('ma_patients',pts);
   const sub=Object.values(selSvcs).reduce((a,b)=>a+(+b||0),0);
   const disc=+(document.getElementById('fDisc').value||0);
   const v={id:'v_'+Date.now(),patientId:pt.id,patientName:pt.name,
@@ -960,16 +1026,16 @@ function saveVisit(){
     notes:document.getElementById('fNotes').value.trim(),
     services:Object.keys(selSvcs).map(id=>{const s=svcs.find(x=>x.id==id);return{id:+id,name:s?s.name:'Service',price:+selSvcs[id]};}),
     subtotal:sub,discount:disc,net:Math.max(0,sub-disc),createdAt:new Date().toISOString()};
-  vis.push(v); DB.set('ma_visits',vis);
+  vis.push(v); await DB.set('ma_visits',vis);
   toast('Visit saved!'); previewReceipt(v.id); resetForm();
 }
 
 // ════════════════════════════════════════
 // RECEIPT
 // ════════════════════════════════════════
-function buildReceipt(vid){
-  const v=gVis().find(x=>x.id===vid); if(!v) return '<p>Not found</p>';
-  const p=gPts().find(x=>x.id===v.patientId)||{}, s=gSet();
+async function buildReceipt(vid){
+  const v=(await gVis()).find(x=>x.id===vid); if(!v) return '<p>Not found</p>';
+  const p=(await gPts()).find(x=>x.id===v.patientId)||{}, s=await gSet();
   const rno=vid.replace('v_','').slice(-6);
   return `<div class="rw" id="r-${vid}">
     <div class="rh">
@@ -997,124 +1063,172 @@ function buildReceipt(vid){
     <div class="rfoot">Thank you for trusting us with your care. Get well soon!<br>Generated by MediAssist Pro</div>
   </div>`;
 }
-function previewReceipt(vid){
-  document.getElementById('rcptContent').innerHTML=buildReceipt(vid);
+async function previewReceipt(vid){
+  document.getElementById('rcptContent').innerHTML = await buildReceipt(vid);
   document.getElementById('rcptContent').dataset.vid=vid;
   openMo('rcptModal');
 }
-function dlPDF(){
+async function dlPDF(){
   const vid=document.getElementById('rcptContent').dataset.vid;
-  const v=gVis().find(x=>x.id===vid); const p=gPts().find(x=>x.id===v?.patientId)||{}; const s=gSet();
-  // Pure JS PDF writer (no library needed)
-  const lines=[]; let oid=0;
-  function obj(content){oid++;lines.push({id:oid,content});return oid;}
-  const fontObj=obj(`<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n>>`);
-  const fontBObj=obj(`<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica-Bold\n>>`);
+  const v=(await gVis()).find(x=>x.id===vid);
+  if(!v){ toast('Visit not found','danger'); return; }
+  const p=(await gPts()).find(x=>x.id===v.patientId)||{};
+  const s=await gSet();
 
-  // Build page content stream
-  const W=420, H=595; // A5 in points
-  const ml=28, mr=W-28;
-  let stream=[];
-  function str(s){return s.replace(/[\\()]/g,'\\$&')}
-  function text(t,x,y,sz,bold=false){stream.push(`BT /${bold?'Fb':'F'} ${sz} Tf ${x} ${H-y} Td (${str(t)}) Tj ET`);}
-  function rect(x,y,w,h,fill){if(fill)stream.push(`${fill} rg ${x} ${H-y-h} ${w} ${h} re f`);else stream.push(`${x} ${H-y-h} ${w} ${h} re S`);}
-  function line(x1,y1,x2,y2){stream.push(`0.7 w ${x1} ${H-y1} m ${x2} ${H-y2} l S`);}
-  function setColor(r,g,b){stream.push(`${r/255} ${g/255} ${b/255} rg`);}
-  function resetColor(){stream.push(`0 0 0 rg`);}
+  // ── Page setup: A5 portrait (420 × 595 pt) ──
+  const W=420, H=595, ml=30, mr=W-30, cw=W-60;
 
-  // Header bg
-  setColor(15,76,117); rect(0,0,W,36); resetColor();
-  setColor(255,255,255);
-  text(s.businessName||'MediAssist Pro',ml,14,14,true);
-  text(s.tagline||'',ml,24,8,false);
-  text(s.name+' · '+s.rank, ml,31,8,false);
-  const rno='#'+vid.replace('v_','').slice(-6);
-  text('RECEIPT '+rno, mr-60, 14, 10, true);
-  text(fmtDate(v.date), mr-60, 24, 8);
-  text(v.time||'', mr-60, 31, 8);
-  resetColor();
+  // PDF stream helpers
+  // Use Tm (text matrix) for absolute positioning — avoids the Td accumulation bug
+  const st=[];
+  function esc(t){ return String(t==null?'':t).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
+  function txt(t, x, y, sz, bold=false){
+    // PDF y-axis is bottom-up; we pass top-down y so convert: pdfY = H - y
+    st.push(`BT /${bold?'Fb':'F'} ${sz} Tf ${x} ${(H-y).toFixed(2)} Tm (${esc(t)}) Tj ET`);
+  }
+  function fillRect(x,y,w,h, r,g,b){
+    // y is top-down top of rect; PDF rect uses bottom-left corner
+    st.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`);
+    st.push(`${x} ${(H-y-h).toFixed(2)} ${w} ${h} re f`);
+    st.push(`0 0 0 rg`); // reset to black
+  }
+  function hline(x1,y,x2){
+    st.push(`0.5 w 0.78 0.82 0.88 RG ${x1} ${(H-y).toFixed(2)} m ${x2} ${(H-y).toFixed(2)} l S 0 0 0 RG`);
+  }
+  function col(r,g,b){ st.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`); }
+  function resetCol(){ st.push(`0 0 0 rg`); }
 
-  let y=50;
-  // Patient box bg
-  setColor(240,244,248); rect(ml,y,W-ml*2,22); resetColor();
-  text(p.name||v.patientName, ml+4, y+10, 11, true);
-  const meta=[p.age?p.age+' yrs':'',p.gender,p.phone].filter(Boolean).join(' · ');
-  text(meta, ml+4, y+18, 9);
-  y+=30;
-  if(p.address){text(p.address.substring(0,58),ml,y,8);y+=8;}
-  if(v.notes){setColor(100,110,130);text('Notes: '+v.notes.substring(0,70),ml,y,8);resetColor();y+=8;}
-  y+=4;
+  // ── HEADER BAND (y=0..38) ──
+  fillRect(0,0,W,38, 15,76,117);
+  col(255,255,255);
+  txt(s.businessName||'MediAssist Pro', ml, 16, 13, true);
+  txt((s.tagline||'Home Medical Care').substring(0,45), ml, 27, 8);
+  txt((s.name||'')+' · '+(s.rank||''), ml, 35, 7.5);
+  const rno='#'+(vid.replace('v_','').slice(-6));
+  txt('RECEIPT '+rno, mr-70, 16, 10, true);
+  txt(fmtDate(v.date), mr-70, 27, 8);
+  txt(v.time||'', mr-70, 35, 8);
+  resetCol();
 
-  // Services table header
-  setColor(15,76,117); rect(ml,y,W-ml*2,10); resetColor();
-  setColor(255,255,255); text('#',ml+2,y+7,8,true); text('Service',ml+14,y+7,8,true); text('Amount (Rs.)',mr-42,y+7,8,true); resetColor();
-  y+=10;
-  v.services.forEach((svc,i)=>{
-    if(i%2===0){setColor(248,250,252); rect(ml,y,W-ml*2,9); resetColor();}
-    text(String(i+1),ml+2,y+7,8); text(svc.name.substring(0,28),ml+14,y+7,8); text(svc.price.toLocaleString(),mr-10,y+7,8);
-    y+=9;
+  let y=50; // current top-down cursor
+
+  // ── PATIENT BOX ──
+  const ptName=String(p.name||v.patientName||'').substring(0,38);
+  const ptMeta=[p.age?p.age+' yrs':'',p.gender,p.phone].filter(Boolean).join('  ·  ');
+  const ptAddr=(p.address||'').substring(0,55);
+  const ptBoxH = ptAddr ? 30 : 22;
+  fillRect(ml, y, cw, ptBoxH, 235,244,250);
+  txt(ptName, ml+5, y+12, 11, true);
+  txt(ptMeta.substring(0,50), ml+5, y+21, 8.5);
+  if(ptAddr){ txt(ptAddr, ml+5, y+29, 8); }
+  y += ptBoxH + 6;
+
+  // Notes line
+  if(v.notes){
+    col(100,110,130);
+    txt('Notes: '+v.notes.substring(0,70), ml, y+7, 8);
+    resetCol();
+    y += 12;
+  }
+
+  y += 2;
+
+  // ── SERVICES TABLE HEADER ──
+  fillRect(ml, y, cw, 11, 15,76,117);
+  col(255,255,255);
+  txt('#', ml+2, y+8, 8, true);
+  txt('Service', ml+14, y+8, 8, true);
+  txt('Amount (Rs.)', mr-52, y+8, 8, true);
+  resetCol();
+  y += 11;
+
+  // ── SERVICE ROWS ──
+  v.services.forEach((svc, i)=>{
+    if(i%2===0) fillRect(ml, y, cw, 10, 246,249,252);
+    txt(String(i+1), ml+2, y+7.5, 8);
+    txt(String(svc.name||'').substring(0,30), ml+14, y+7.5, 8);
+    const priceStr='Rs. '+Number(svc.price||0).toLocaleString('en-PK');
+    txt(priceStr, mr-52, y+7.5, 8);
+    y += 10;
   });
-  y+=4; setColor(200,210,220); line(ml,y,mr,y); resetColor(); y+=6;
-  if(v.discount){ text('Subtotal: Rs. '+v.subtotal.toLocaleString(), mr-70,y,9); y+=7; setColor(220,40,40); text('Discount: - Rs. '+v.discount.toLocaleString(), mr-70,y,9); resetColor(); y+=7; }
-  setColor(16,185,129); text('Total: Rs. '+v.net.toLocaleString(), mr-70,y,13,true); resetColor();
-  y+=14;
-  setColor(240,244,248); rect(ml,y,W-ml*2,14); resetColor();
-  setColor(130,140,160); text('Thank you for trusting us with your care. Get well soon!', ml+6, y+7, 8); resetColor();
-  text('Generated by MediAssist Pro', ml+6, y+13, 7);
 
-  const streamContent=stream.join('\n');
-  const streamObj=obj(`<<\n/Length ${streamContent.length}\n>>\nstream\n${streamContent}\nendstream`);
-  const resObj=obj(`<<\n/Font <<\n/F /R1 0 R\n/Fb /R2 0 R\n>>\n>>`);
-  const pageObj=obj(`<<\n/Type /Page\n/Parent 5 0 R\n/MediaBox [0 0 ${W} ${H}]\n/Contents ${streamObj} 0 R\n/Resources ${resObj} 0 R\n>>`);
+  y += 5;
+  hline(ml, y, mr);
+  y += 7;
 
-  // Patch font refs properly
-  let pdf=`%PDF-1.4\n`;
-  const offsets=[];
-  const objContents=[null, // placeholder for 1-based
-    `<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n>>`,
-    `<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica-Bold\n>>`,
-    streamContent, // content stream
-    `<<\n/Length ${streamContent.length}\n>>\nstream\n${streamContent}\nendstream`, // will rebuild
-    `<<\n/Type /Pages\n/Kids [6 0 R]\n/Count 1\n>>`,
-    `<<\n/Type /Page\n/Parent 5 0 R\n/MediaBox [0 0 ${W} ${H}]\n/Contents 4 0 R\n/Resources <<\n  /Font <<\n    /F 1 0 R\n    /Fb 2 0 R\n  >>\n>>\n>>`,
-    `<<\n/Type /Catalog\n/Pages 5 0 R\n>>`
-  ];
-  // rebuild correctly
-  let pdfStr='%PDF-1.4\n';
-  const offs=[];
-  const objs=[
-    `1 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n>>\nendobj\n`,
-    `2 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica-Bold\n>>\nendobj\n`,
-    `3 0 obj\n<<\n/Length ${streamContent.length}\n>>\nstream\n${streamContent}\nendstream\nendobj\n`,
-    `4 0 obj\n<<\n/Type /Pages\n/Kids [5 0 R]\n/Count 1\n>>\nendobj\n`,
-    `5 0 obj\n<<\n/Type /Page\n/Parent 4 0 R\n/MediaBox [0 0 ${W} ${H}]\n/Contents 3 0 R\n/Resources <<\n  /Font <<\n    /F 1 0 R\n    /Fb 2 0 R\n  >>\n>>\n>>\nendobj\n`,
-    `6 0 obj\n<<\n/Type /Catalog\n/Pages 4 0 R\n>>\nendobj\n`
-  ];
-  objs.forEach((o,i)=>{offs.push(pdfStr.length);pdfStr+=o;});
-  const xref=pdfStr.length;
-  pdfStr+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
-  offs.forEach(o=>pdfStr+=String(o).padStart(10,'0')+` 00000 n \n`);
-  pdfStr+=`trailer\n<<\n/Size ${objs.length+1}\n/Root 6 0 R\n>>\nstartxref\n${xref}\n%%EOF`;
+  // ── TOTALS ──
+  if(v.discount){
+    txt('Subtotal: Rs. '+Number(v.subtotal||0).toLocaleString('en-PK'), mr-100, y+7, 8.5);
+    y += 12;
+    col(200,40,40);
+    txt('Discount:  - Rs. '+Number(v.discount||0).toLocaleString('en-PK'), mr-100, y+7, 8.5);
+    resetCol();
+    y += 12;
+  }
 
-  const blob=new Blob([pdfStr],{type:'application/pdf'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`Receipt_${p.name||'Patient'}_${v.date}.pdf`; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  // Total box
+  fillRect(ml, y, cw, 16, 15,76,117);
+  col(255,255,255);
+  txt('TOTAL PAYABLE', ml+5, y+11, 9, true);
+  const totalStr='Rs. '+Number(v.net||0).toLocaleString('en-PK');
+  txt(totalStr, mr-55, y+11, 11, true);
+  resetCol();
+  y += 24;
+
+  // ── FOOTER ──
+  hline(ml, y, mr);
+  y += 8;
+  col(150,160,170);
+  txt('Thank you for trusting us with your care. Get well soon!', ml, y+7, 7.5);
+  txt('Generated by MediAssist Pro  ·  '+new Date().toLocaleDateString('en-PK'), ml, y+15, 7);
+  resetCol();
+
+  // ── BUILD PDF BINARY ──
+  const sc = st.join('\n');
+  // Byte-length of stream (ASCII only after escaping, so length === byte count)
+  const scLen = sc.length;
+
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+
+  function addObj(id, body){
+    offsets[id] = out.length;
+    out += `${id} 0 obj\n${body}\nendobj\n`;
+  }
+
+  addObj(1, `<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n/Encoding /WinAnsiEncoding\n>>`);
+  addObj(2, `<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica-Bold\n/Encoding /WinAnsiEncoding\n>>`);
+  addObj(3, `<<\n/Length ${scLen}\n>>\nstream\n${sc}\nendstream`);
+  addObj(4, `<<\n/Type /Pages\n/Kids [5 0 R]\n/Count 1\n>>`);
+  addObj(5, `<<\n/Type /Page\n/Parent 4 0 R\n/MediaBox [0 0 ${W} ${H}]\n/Contents 3 0 R\n/Resources <<\n  /Font << /F 1 0 R /Fb 2 0 R >>\n>>\n>>`);
+  addObj(6, `<<\n/Type /Catalog\n/Pages 4 0 R\n>>`);
+
+  const xrefPos = out.length;
+  out += `xref\n0 7\n0000000000 65535 f \n`;
+  for(let i=1;i<=6;i++) out += String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  out += `trailer\n<<\n/Size 7\n/Root 6 0 R\n>>\nstartxref\n${xrefPos}\n%%EOF`;
+
+  const blob = new Blob([out], {type:'application/pdf'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;
+  a.download=`Receipt_${(p.name||v.patientName||'Patient').replace(/\s+/g,'_')}_${v.date}.pdf`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
   toast('PDF downloaded!');
 }
 
 // ════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════
-function renderSettings(){
-  const s=gSet();
+async function renderSettings(){
+  const s=await gSet();
   document.getElementById('sName').value=s.name||'';
   document.getElementById('sRank').value=s.rank||'';
   document.getElementById('sBiz').value=s.businessName||'';
   document.getElementById('sTag').value=s.tagline||'';
   document.getElementById('sPh').value=s.phone||'';
   document.getElementById('sAdr').value=s.address||'';
-  // Show profile photo in settings avatar
   const sAv=document.getElementById('settingsAvatar');
   if(s.photo){
     sAv.innerHTML=`<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
@@ -1126,28 +1240,29 @@ function renderSettings(){
 function handleSettingsPhoto(input){
   const file=input.files[0]; if(!file) return;
   const r=new FileReader();
-  r.onload=e=>{
-    const s=gSet(); s.photo=e.target.result; DB.set('ma_settings',s);
+  r.onload=async e=>{
+    const s=await gSet(); s.photo=e.target.result; await DB.set('ma_settings',s);
     const sAv=document.getElementById('settingsAvatar');
     sAv.innerHTML=`<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
     toast('Photo saved!');
   };
   r.readAsDataURL(file);
 }
-function saveSettings(){
-  DB.set('ma_settings',{
+async function saveSettings(){
+  const cur=await gSet();
+  await DB.set('ma_settings',{
     name:document.getElementById('sName').value.trim(),
     rank:document.getElementById('sRank').value.trim(),
     businessName:document.getElementById('sBiz').value.trim(),
     tagline:document.getElementById('sTag').value.trim(),
     phone:document.getElementById('sPh').value.trim(),
     address:document.getElementById('sAdr').value.trim(),
-    photo:gSet().photo||''
+    photo:cur.photo||''
   });
   toast('Settings saved!');
 }
-function renderSvcSettings(){
-  const svcs=gSvc().sort((a,b)=>a.name.localeCompare(b.name));
+async function renderSvcSettings(){
+  const svcs=(await gSvc()).sort((a,b)=>a.name.localeCompare(b.name));
   document.getElementById('svcCnt').textContent=svcs.length;
   document.getElementById('svcTblBody').innerHTML=svcs.map((s,i)=>`
     <tr>
@@ -1157,13 +1272,20 @@ function renderSvcSettings(){
       <td><button class="sdel" onclick="delSvc(${s.id})">✕</button></td>
     </tr>`).join('');
 }
-function updSvc(id,f,v){const svcs=gSvc(),s=svcs.find(x=>x.id===id);if(s){s[f]=v;DB.set('ma_services',svcs);}}
-function delSvc(id){if(!confirm('Remove this service?'))return;DB.set('ma_services',gSvc().filter(s=>s.id!==id));renderSvcSettings();toast('Removed');}
-function addSvc(){
+async function updSvc(id,f,v){
+  const svcs=await gSvc(), s=svcs.find(x=>x.id===id);
+  if(s){ s[f]=v; await DB.set('ma_services',svcs); }
+}
+async function delSvc(id){
+  if(!confirm('Remove this service?'))return;
+  await DB.set('ma_services',(await gSvc()).filter(s=>s.id!==id));
+  renderSvcSettings(); toast('Removed');
+}
+async function addSvc(){
   const n=document.getElementById('nSvcName').value.trim(); if(!n){toast('Enter a name','danger');return;}
-  const svcs=gSvc(); const nid=Math.max(...svcs.map(s=>s.id),0)+1;
+  const svcs=await gSvc(); const nid=Math.max(...svcs.map(s=>s.id),0)+1;
   svcs.push({id:nid,name:n,price:+(document.getElementById('nSvcPrice').value)||0});
-  DB.set('ma_services',svcs);
+  await DB.set('ma_services',svcs);
   document.getElementById('nSvcName').value=''; document.getElementById('nSvcPrice').value='';
   renderSvcSettings(); toast('Service added!');
 }
