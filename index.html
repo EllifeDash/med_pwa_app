@@ -32,10 +32,10 @@ input,select,textarea{font-family:var(--fn);font-size:14px;border:1.5px solid va
 input:focus,select:focus,textarea:focus{border-color:var(--pl)}
 textarea{resize:vertical;min-height:72px}
 label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-bottom:5px}
-
+ 
 .screen{display:none;min-height:100vh}
 .screen.active{display:block}
-
+ 
 /* NAV */
 .topnav{background:var(--p);color:#fff;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .logo{font-family:var(--fd);font-size:19px}.logo em{color:var(--ac);font-style:normal}
@@ -43,7 +43,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .nbtn{background:rgba(255,255,255,.13);color:#fff;border:none;border-radius:var(--rs);padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;transition:background .18s}
 .nbtn:hover{background:rgba(255,255,255,.23)}
 .nbtn.on{background:var(--ac);color:#000}
-
+ 
 .bottomnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bd);z-index:200;padding:6px 0 env(safe-area-inset-bottom,0)}
 .bni{display:flex;justify-content:space-around}
 .bb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;font-family:var(--fn);font-size:11px;color:var(--tx3);padding:6px 4px;cursor:pointer;transition:color .18s}
@@ -54,16 +54,16 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
   .topnav-right{display:none}
   .screen.active{padding-bottom:calc(72px + env(safe-area-inset-bottom,0))}
 }
-
+ 
 /* LAYOUT */
 .pw{max-width:900px;margin:0 auto;padding:24px 18px}
 .ptitle{font-size:22px;font-weight:700;margin-bottom:3px}
 .psub{font-size:14px;color:var(--tx2);margin-bottom:20px}
-
+ 
 /* CARD */
 .card{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:18px 20px;box-shadow:var(--sh)}
 .card+.card{margin-top:14px}
-
+ 
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--rs);padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:all .18s}
 .bp{background:var(--p);color:#fff}.bp:hover{background:var(--pl)}
@@ -73,29 +73,29 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .bs{background:#ecfdf5;color:var(--ok);border:1px solid #a7f3d0}.bs:hover{background:#d1fae5}
 .bsm{padding:7px 12px;font-size:13px}
 .bfl{width:100%;justify-content:center}
-
+ 
 /* BADGE */
 .bdg{display:inline-block;border-radius:20px;padding:2px 9px;font-size:12px;font-weight:600}
 .b-blue{background:#e0f2fe;color:#0369a1}.b-green{background:#dcfce7;color:#166534}
 .b-amber{background:#fef3c7;color:#92400e}.b-red{background:#fee2e2;color:#991b1b}.b-gray{background:#f1f5f9;color:#475569}
-
+ 
 /* FORM */
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 @media(max-width:520px){.fg{grid-template-columns:1fr}}
 .fi{display:flex;flex-direction:column}
 .fi.s2{grid-column:1/-1}
-
+ 
 /* TABLE */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th{text-align:left;padding:9px 11px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--bd)}
 .tbl td{padding:11px 11px;border-bottom:1px solid var(--bd);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:var(--bg)}
-
+ 
 /* SEARCH */
 .sbar{display:flex;gap:9px;margin-bottom:16px}
 .sbar input{flex:1}
-
+ 
 /* PATIENT CARD */
 .pc{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:box-shadow .2s,border-color .2s;box-shadow:var(--sh)}
 .pc:hover{box-shadow:var(--shl);border-color:var(--pl)}
@@ -109,32 +109,32 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .pst{text-align:right;flex-shrink:0}
 .pst .vc{font-size:20px;font-weight:700;color:var(--p)}
 .pst .vl{font-size:12px;color:var(--tx3)}
-
+ 
 /* SERVICE TAG */
 .stag{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--bd2);border-radius:20px;padding:5px 11px;font-size:13px;cursor:pointer;transition:all .18s;user-select:none}
 .stag.sel{background:var(--p);color:#fff;border-color:var(--p)}
 .stw{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-
+ 
 /* HISTORY */
 .hi{border-left:3px solid var(--pl);padding:11px 13px;background:var(--sur2);border-radius:0 var(--rs) var(--rs) 0;margin-bottom:9px}
 .hd{font-size:12px;color:var(--tx3);margin-bottom:3px}
 .hs{font-size:14px;font-weight:600}
 .hn{font-size:13px;color:var(--tx2);margin-top:3px}
 .ha{font-size:14px;color:var(--ok);font-weight:700;margin-top:2px}
-
+ 
 /* STATS */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:11px;margin-bottom:20px}
 .scard{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:14px 16px;text-align:center}
 .sv{font-size:26px;font-weight:700;color:var(--p)}
 .sl{font-size:12px;color:var(--tx3);margin-top:1px}
-
+ 
 /* PHOTO UPLOAD */
 .photo-upload-area{width:100px;height:100px;border-radius:50%;border:2.5px dashed var(--bd2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;overflow:hidden;flex-shrink:0;background:var(--sur2)}
 .photo-upload-area:hover{border-color:var(--pl)}
 .photo-upload-area img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .photo-upload-area .pu-hint{font-size:11px;color:var(--tx3);text-align:center;padding:6px;line-height:1.3}
 .photo-upload-area svg{width:28px;height:28px;color:var(--tx3);margin-bottom:4px}
-
+ 
 /* DOCUMENT UPLOAD */
 .doc-card{background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;display:flex;align-items:center;gap:10px}
 .doc-icon{width:36px;height:36px;border-radius:var(--rs);background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -144,38 +144,49 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .doc-del{background:none;border:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;font-size:16px;transition:color .2s;flex-shrink:0}
 .doc-del:hover{color:var(--err)}
 .doc-thumb{width:36px;height:36px;object-fit:cover;border-radius:6px}
-
+ 
 /* STORAGE BAR */
 .stor-bar{background:var(--bg);border-radius:20px;height:6px;overflow:hidden;margin-top:4px}
 .stor-fill{height:100%;border-radius:20px;background:var(--ok);transition:width .4s}
 .stor-fill.warn{background:var(--warn)}
 .stor-fill.danger{background:var(--err)}
-
+ 
 /* WELCOME */
+@keyframes wFadeIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 #ws{background:linear-gradient(145deg,#0d3b5c 0%,#0f4c75 40%,#1565a8 75%,#00b4d8 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 18px;position:relative;overflow:hidden}
 #ws .wv{position:absolute;bottom:-10px;left:0;right:0;opacity:.18}
-.wcard{background:rgba(255,255,255,.97);border-radius:var(--rxl);padding:34px 30px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;z-index:2;text-align:center}
-.wbrand{font-family:var(--fd);font-size:26px;color:var(--p)}.wbrand em{color:var(--ac);font-style:normal}
-.wtag{font-size:13px;color:var(--tx3);margin-bottom:24px}
-/* photo upload centered in welcome */
-.wphoto-wrap{display:flex;justify-content:center;margin-bottom:18px}
-.wphoto-area{width:88px;height:88px;border-radius:50%;border:3px solid var(--ac);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--sur2);position:relative}
-.wphoto-area img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.wphoto-area .wpa-hint{font-size:10px;color:var(--tx3);text-align:center;line-height:1.2}
-.wphoto-area .wpa-init{font-size:26px;font-weight:700;color:var(--p)}
-.wpa-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%}
-.wphoto-area:hover .wpa-overlay{opacity:1}
-.winputs{text-align:left;display:flex;flex-direction:column;gap:11px;margin-bottom:20px}
-.wactions{display:flex;gap:9px}
-.wactions .btn{flex:1;justify-content:center}
-
+/* Spinner */
+#wsSpinner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;pointer-events:none}
+.spin-ring{width:46px;height:46px;border:4px solid rgba(255,255,255,.22);border-top-color:#fff;border-radius:50%;animation:spin .75s linear infinite}
+/* Card */
+.wcard{background:rgba(255,255,255,.97);border-radius:var(--rxl);padding:26px 28px 28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.32);position:relative;z-index:2;text-align:center;opacity:0}
+.wcard-ready{animation:wFadeIn .6s ease forwards}
+/* Top row: logo + brand */
+.wcard-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;text-align:left}
+.wlogo-wrap{width:56px;height:56px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--sur2);border:1.5px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.wlogo-wrap img{width:100%;height:100%;object-fit:contain;padding:3px}
+.wlogo-hint{font-size:9px;color:var(--tx3);text-align:center;line-height:1.2;padding:2px}
+.wbrand{font-family:var(--fd);font-size:22px;color:var(--p);line-height:1.2}.wbrand em{color:var(--ac);font-style:normal}
+.wtag{font-size:12px;color:var(--tx3);margin-top:1px}
+/* Subject photo */
+.wsubject-wrap{display:flex;justify-content:center;margin:4px -28px 10px;min-height:190px;max-height:270px;overflow:hidden}
+.wsubject-img{max-width:100%;max-height:270px;object-fit:contain;object-position:center top}
+.wsubject-placeholder{width:100%;min-height:190px;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#e8f4fd 0%,#dbeafe 100%)}
+/* Name / rank display */
+.wdisplay-name{font-size:21px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.wdisplay-rank{font-size:13px;color:var(--tx2);margin-bottom:20px}
+/* compat — hidden inputs kept for saveProfile() */
+.winputs{display:none}
+.wactions{display:none}
+ 
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(10,20,40,.45);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
 .mo.open{opacity:1;pointer-events:all}
 .mb{background:var(--sur);border-radius:var(--rxl) var(--rxl) 0 0;width:100%;max-width:640px;max-height:93vh;overflow-y:auto;padding:26px 22px 32px;transform:translateY(40px);transition:transform .28s;-webkit-overflow-scrolling:touch}
 .mo.open .mb{transform:translateY(0)}
 .mc{position:absolute;top:16px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
-
+ 
 /* RECEIPT */
 .rw{background:#fff;border-radius:var(--rl);border:2px solid var(--bd);padding:24px 26px;font-family:var(--fn);max-width:580px;margin:0 auto}
 .rh{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid var(--p);padding-bottom:14px;margin-bottom:14px}
@@ -190,14 +201,14 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .rtbl tr:last-child td{border-bottom:none}
 .rtot{display:flex;justify-content:flex-end;gap:36px;font-weight:700;font-size:16px;border-top:2px solid var(--p);padding-top:9px}
 .rfoot{margin-top:16px;font-size:12px;color:var(--tx3);text-align:center;border-top:1px solid var(--bd);padding-top:10px}
-
+ 
 /* SETTINGS SVC */
 .sstit{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3);margin:22px 0 9px}
 .sr{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--bd)}
 .sr:last-child{border-bottom:none}
 .sdel{background:none;border:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;font-size:17px;transition:color .2s;flex-shrink:0}
 .sdel:hover{color:var(--err)}
-
+ 
 /* UTILS */
 .flex{display:flex}.ic{align-items:center}.jb{justify-content:space-between}
 .g8{gap:8px}.g12{gap:12px}.g16{gap:16px}
@@ -213,35 +224,50 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 </style>
 </head>
 <body>
-
+ 
 <!-- ══════════ WELCOME SCREEN ══════════ -->
 <div id="ws" class="screen active">
-  <div class="wcard">
-    <div class="wbrand">Medi<em>Assist</em> Pro</div>
-    <div class="wtag" id="wTagline">Your Mobile Medical Companion</div>
-    <div class="wphoto-wrap">
-      <div class="wphoto-area" onclick="document.getElementById('wPhotoInput').click()" title="Tap to upload photo">
-        <span class="wpa-init" id="wInitials">MA</span>
-        <div class="wpa-overlay">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        </div>
+  <!-- Loading spinner (visible while data loads) -->
+  <div id="wsSpinner"><div class="spin-ring"></div></div>
+ 
+  <div class="wcard" id="wsCard">
+    <!-- Top row: logo (left) + brand title + tagline (right) -->
+    <div class="wcard-top">
+      <div class="wlogo-wrap" id="wLogoWrap">
+        <span class="wlogo-hint">Logo</span>
       </div>
-      <input type="file" id="wPhotoInput" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none" onchange="handleWelcomePhoto(this)"/>
+      <div>
+        <div class="wbrand">Medi<em>Assist</em> Pro</div>
+        <div class="wtag" id="wTagline">Your Mobile Medical Companion</div>
+      </div>
     </div>
+ 
+    <!-- Subject / profile photo — centered, full-bleed -->
+    <div class="wsubject-wrap" id="wSubjectWrap">
+      <div class="wsubject-placeholder" id="wSubjectPlaceholder">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(15,76,117,.2)" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+    </div>
+ 
+    <!-- Name and designation (display only — edit in Settings) -->
+    <div class="wdisplay-name" id="wDisplayName">Your Name</div>
+    <div class="wdisplay-rank" id="wDisplayRank">Rank / Designation</div>
+ 
+    <!-- Enter App button -->
+    <button class="btn bp bfl" onclick="enterApp()">Enter App</button>
+ 
+    <!-- Hidden inputs kept for saveProfile() compatibility -->
     <div class="winputs">
-      <div class="fi"><label>Your Name</label><input id="iName" type="text" placeholder="e.g. Muhammad Ali" oninput="updateWelcomeInitials()"/></div>
-      <div class="fi"><label>Rank / Designation</label><input id="iRank" type="text" placeholder="e.g. Medical Attendant"/></div>
-    </div>
-    <div class="wactions">
-      <button class="btn bg" onclick="saveProfile()">Save</button>
-      <button class="btn bp" onclick="enterApp()">Enter App →</button>
+      <input id="iName" type="text"/>
+      <input id="iRank" type="text"/>
     </div>
   </div>
+ 
   <svg class="wv" viewBox="0 0 1440 160" xmlns="http://www.w3.org/2000/svg">
     <path fill="#fff" d="M0,80 C360,160 1080,0 1440,80 L1440,160 L0,160 Z"/>
   </svg>
 </div>
-
+ 
 <!-- ══════════ MAIN APP ══════════ -->
 <div id="app" class="screen">
   <nav class="topnav">
@@ -254,7 +280,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       <button class="nbtn" onclick="logout()" style="background:rgba(255,255,255,.08)">Logout</button>
     </div>
   </nav>
-
+ 
   <!-- DASHBOARD -->
   <div id="pg-dashboard" class="pw">
     <div class="flex ic jb mb12">
@@ -273,7 +299,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       <div id="recentVisits"></div>
     </div>
   </div>
-
+ 
   <!-- PATIENTS -->
   <div id="pg-patients" class="pw" style="display:none">
     <div class="ptitle">Patients</div>
@@ -284,7 +310,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     </div>
     <div id="patientsList"></div>
   </div>
-
+ 
   <!-- ADD VISIT -->
   <div id="pg-addVisit" class="pw" style="display:none">
     <div class="ptitle">New Visit</div>
@@ -329,7 +355,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       <button class="btn bp bfl" onclick="saveVisit()">Save & Preview Receipt</button>
     </div>
   </div>
-
+ 
   <!-- PATIENT HISTORY PAGE (full-page) -->
   <div id="pg-history" class="pw" style="display:none">
     <div class="flex ic g12 mb16">
@@ -353,7 +379,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         </div>
       </div>
     </div>
-
+ 
     <!-- Medical History Notes -->
     <div class="card mb12">
       <div class="flex ic jb mb12">
@@ -362,7 +388,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       </div>
       <div id="histNotes"></div>
     </div>
-
+ 
     <!-- Documents & Reports -->
     <div class="card mb12">
       <div class="flex ic jb mb12">
@@ -380,14 +406,14 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       </div>
       <div id="docsList"></div>
     </div>
-
+ 
     <!-- Visit History -->
     <div class="card">
       <h3 class="mb12">Visit History</h3>
       <div id="hpVisits"></div>
     </div>
   </div>
-
+ 
   <!-- SETTINGS -->
   <div id="pg-settings" class="pw" style="display:none">
     <div class="ptitle">Settings</div>
@@ -411,6 +437,18 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         <input type="file" id="settingsPhotoInput" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none" onchange="handleSettingsPhoto(this)"/>
         <div class="tsm ts">Upload your profile photo (.png, .jpg). Stored locally on device — no internet required.</div>
       </div>
+      <!-- Logo upload -->
+      <div class="mt16">
+        <label style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:8px;display:block">Clinic / Business Logo</label>
+        <div class="flex ic g16">
+          <div class="photo-upload-area" id="settingsLogo" onclick="document.getElementById('settingsLogoInput').click()" style="border-radius:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="3 9 7 5 11 9 15 5 19 9"/><circle cx="8.5" cy="14.5" r="1.5"/></svg>
+            <span class="pu-hint">Tap to upload logo</span>
+          </div>
+          <input type="file" id="settingsLogoInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml" style="display:none" onchange="handleSettingsLogo(this)"/>
+          <div class="tsm ts">Upload your clinic/business logo (.png preferred for transparent bg). Appears on the Welcome screen and on receipts.</div>
+        </div>
+      </div>
       <button class="btn bp mt16" onclick="saveSettings()">Save Settings</button>
     </div>
     <div class="sstit">Services & Pricing <span class="bdg b-blue" id="svcCnt">0</span></div>
@@ -429,14 +467,14 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       </div>
       <button class="btn bp mt16" onclick="addSvc()">Add Service</button>
     </div>
-
+ 
     <!-- Future online migration note -->
     <div class="card mt16" style="border:1px solid #bfdbfe;background:#eff6ff">
       <div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:6px">☁ Ready for Online Migration</div>
       <div class="tsm" style="color:#3b82f6">All data is stored in clean JSON format in your browser's localStorage. When you're ready to go online, this app can be connected to a cloud database (Firebase, Supabase, or a custom server) with minimal changes. Your patient records, visit history, and documents will migrate seamlessly.</div>
     </div>
   </div>
-
+ 
   <nav class="bottomnav">
     <div class="bni">
       <button class="bb on" data-pg="dashboard" onclick="go('dashboard',this)">
@@ -458,7 +496,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     </div>
   </nav>
 </div>
-
+ 
 <!-- RECEIPT MODAL -->
 <div class="mo" id="rcptModal">
   <div class="mb" style="position:relative">
@@ -472,7 +510,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     </div>
   </div>
 </div>
-
+ 
 <!-- ADD HISTORY NOTE MODAL -->
 <div class="mo" id="histModal">
   <div class="mb" style="position:relative">
@@ -496,7 +534,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     </div>
   </div>
 </div>
-
+ 
 <!-- DOC PREVIEW MODAL -->
 <div class="mo" id="docModal">
   <div class="mb" style="position:relative;text-align:center">
@@ -505,9 +543,9 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     <div id="docModalContent"></div>
   </div>
 </div>
-
+ 
 <div id="toast"></div>
-
+ 
 <script>
 // ════════════════════════════════════════
 // DATA LAYER — IndexedDB (async, ~50MB+ storage)
@@ -516,7 +554,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 const DB = (() => {
   const DB_NAME = 'mediassist', DB_VER = 1, STORE = 'kv';
   let _db = null;
-
+ 
   function open() {
     if (_db) return Promise.resolve(_db);
     return new Promise((res, rej) => {
@@ -528,7 +566,7 @@ const DB = (() => {
       req.onerror = e => rej(e.target.error);
     });
   }
-
+ 
   async function get(k) {
     const db = await open();
     return new Promise((res, rej) => {
@@ -538,7 +576,7 @@ const DB = (() => {
       req.onerror = e => rej(e.target.error);
     });
   }
-
+ 
   async function set(k, v) {
     const db = await open();
     return new Promise((res, rej) => {
@@ -548,7 +586,7 @@ const DB = (() => {
       tx.onerror = e => rej(e.target.error);
     });
   }
-
+ 
   // Migrate from localStorage on first boot
   async function migrate() {
     const KEYS = ['ma_settings','ma_patients','ma_visits','ma_services'];
@@ -567,26 +605,26 @@ const DB = (() => {
     }
     await set('__migrated__', true);
   }
-
+ 
   return { get, set, migrate };
 })();
-
+ 
 // Default values
 const DEFAULT_SVC = [{id:1,name:'First Aid',price:300},{id:2,name:'Regular Checkup',price:500},{id:3,name:'Blood Sample Collection',price:400},{id:4,name:'Injection / Drip',price:600},{id:5,name:'Bandage Dressing',price:350},{id:6,name:'BP / Sugar Check',price:200},{id:7,name:'Medicine Delivery',price:100},{id:8,name:'Wound Cleaning',price:300},{id:9,name:'ECG',price:800},{id:10,name:'IV Cannula',price:700}];
-const DEFAULT_SET = {name:'Medical Attendant',rank:'Home Care Professional',businessName:'MediAssist Pro',tagline:'Your Mobile Medical Companion',phone:'',address:'',photo:''};
-
+const DEFAULT_SET = {name:'Medical Attendant',rank:'Home Care Professional',businessName:'MediAssist Pro',tagline:'Your Mobile Medical Companion',phone:'',address:'',photo:'',logo:''};
+ 
 async function gSet(){return (await DB.get('ma_settings')) || DEFAULT_SET;}
 async function gPts(){return (await DB.get('ma_patients')) || [];}
 async function gVis(){return (await DB.get('ma_visits')) || [];}
 async function gSvc(){return (await DB.get('ma_services')) || DEFAULT_SVC;}
 async function gHistNotes(pid){return (await DB.get('ma_hist_'+pid)) || [];}
 async function gDocs(pid){return (await DB.get('ma_docs_'+pid)) || [];}
-
+ 
 let selSvcs = {};   // {id: price}
 let activePtId = null;
 let editingHistNoteId = null;
 let historyPatientId = null;
-
+ 
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
@@ -595,16 +633,35 @@ window.addEventListener('load', async () => {
   const existing = await DB.get('ma_services');
   if (!existing) await DB.set('ma_services', DEFAULT_SVC);
   const s = await gSet();
+ 
+  // Populate welcome screen display elements
   document.getElementById('wTagline').textContent = s.tagline || 'Your Mobile Medical Companion';
+  document.getElementById('wDisplayName').textContent = s.name || 'Your Name';
+  document.getElementById('wDisplayRank').textContent = s.rank || 'Rank / Designation';
+ 
+  // Logo (upper-left)
+  if(s.logo){
+    document.getElementById('wLogoWrap').innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;padding:4px"/>`;
+  }
+  // Subject / profile photo (center)
+  if(s.photo){
+    document.getElementById('wSubjectWrap').innerHTML=`<img src="${s.photo}" class="wsubject-img"/>`;
+  }
+ 
+  // Keep hidden compat inputs populated for saveProfile()
   document.getElementById('iName').value = s.name || '';
   document.getElementById('iRank').value = s.rank || '';
   updateWelcomeInitials();
-  if (s.photo) setWelcomePhoto(s.photo);
+ 
   const now = new Date();
   document.getElementById('fDate').valueAsDate = now;
   document.getElementById('fTime').value = now.toTimeString().slice(0, 5);
+ 
+  // Hide spinner, fade in card
+  document.getElementById('wsSpinner').style.display = 'none';
+  document.getElementById('wsCard').classList.add('wcard-ready');
 });
-
+ 
 // ════════════════════════════════════════
 // WELCOME
 // ════════════════════════════════════════
@@ -612,11 +669,11 @@ function getInits(name){if(!name)return'MA';return name.trim().split(' ').map(w=
 function updateWelcomeInitials(){
   const n = document.getElementById('iName').value;
   const el = document.getElementById('wInitials');
-  if(el.tagName!=='IMG') el.textContent = getInits(n);
+  if(el && el.tagName!=='IMG') el.textContent = getInits(n);
 }
 function setWelcomePhoto(b64){
-  const area = document.querySelector('.wphoto-area');
-  area.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/><div class="wpa-overlay"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
+  const wrap = document.getElementById('wSubjectWrap');
+  if(wrap) wrap.innerHTML = `<img src="${b64}" class="wsubject-img"/>`;
 }
 function handleWelcomePhoto(input){
   const file = input.files[0]; if(!file) return;
@@ -644,7 +701,7 @@ function logout(){
   document.getElementById('app').classList.remove('active');
   document.getElementById('ws').style.display=''; document.getElementById('ws').classList.add('active');
 }
-
+ 
 // ════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════
@@ -660,7 +717,7 @@ function go(pg, btn){
   if(pg==='addVisit') renderSvcTags();
   if(pg==='settings') renderSettings();
 }
-
+ 
 // ════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════
@@ -690,7 +747,7 @@ async function renderDash(){
     </div>`).join('') :
     `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>No visits yet</p><span>Add your first patient visit</span></div>`;
 }
-
+ 
 // ════════════════════════════════════════
 // PATIENTS
 // ════════════════════════════════════════
@@ -714,7 +771,7 @@ async function renderPatients(){
     </div>`;
   }).join('');
 }
-
+ 
 // ════════════════════════════════════════
 // HISTORY PAGE
 // ════════════════════════════════════════
@@ -723,13 +780,13 @@ async function openHistory(pid){
   const p=(await gPts()).find(x=>x.id===pid); if(!p) return;
   const vis=(await gVis()).filter(v=>v.patientId===pid).sort((a,b)=>b.date.localeCompare(a.date));
   const total=vis.reduce((s,v)=>s+(v.net||0),0);
-
+ 
   document.getElementById('hpName').textContent = p.name;
   document.getElementById('hpMeta').textContent = [p.age?p.age+' yrs':'', p.gender, p.phone, p.address].filter(Boolean).join(' · ');
   document.getElementById('hpFullName').textContent = p.name;
   document.getElementById('hpDetails').textContent = [p.age?p.age+' years old':'', p.gender, p.phone].filter(Boolean).join(' · ');
   if(p.address) document.getElementById('hpDetails').textContent += ' · ' + p.address;
-
+ 
   // Avatar
   const hpAv = document.getElementById('hpAv');
   if(p.photo){
@@ -739,34 +796,34 @@ async function openHistory(pid){
     hpAv.onmouseenter = ()=>hpAv.querySelector('.wpa-overlay').style.opacity=1;
     hpAv.onmouseleave = ()=>hpAv.querySelector('.wpa-overlay').style.opacity=0;
   }
-
+ 
   document.getElementById('hpStats').innerHTML = `
     <div class="scard"><div class="sv" style="font-size:20px">${vis.length}</div><div class="sl">Visits</div></div>
     <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
     <div class="scard"><div class="sv" style="font-size:14px">${vis[0]?fmtDate(vis[0].date):'—'}</div><div class="sl">Last Visit</div></div>`;
-
+ 
   renderHistNotes();
   renderDocs();
   renderPatientVisits(vis);
   updateStorageBar(pid);
-
+ 
   // Action button for new visit
 // Remove existing button if already present
 let btn = document.getElementById('newVisitBtn');
-
+ 
 if (!btn) {
   btn = document.createElement('button');
   btn.id = "newVisitBtn";
   btn.className = "btn bp bsm mt12";
   document.getElementById('hpStats').after(btn);
 }
-
+ 
 btn.textContent = "+ New Visit for this Patient";
 btn.onclick = () => prefillPt(pid);
-
+ 
   go('history', null);
 }
-
+ 
 async function renderHistNotes(){
   const notes = (await gHistNotes(historyPatientId)).sort((a,b)=>b.date.localeCompare(a.date));
   const el = document.getElementById('histNotes');
@@ -786,7 +843,7 @@ async function renderHistNotes(){
       ${n.details?`<div class="hn">${n.details}</div>`:''}
     </div>`).join('');
 }
-
+ 
 function showAddHistNote(){
   editingHistNoteId = null;
   document.getElementById('histModalTitle').textContent = 'Add Medical History Note';
@@ -827,7 +884,7 @@ async function delHistNote(id){
   const notes = (await gHistNotes(historyPatientId)).filter(n=>n.id!==id);
   await DB.set('ma_hist_'+historyPatientId, notes); renderHistNotes(); toast('Note deleted');
 }
-
+ 
 // DOCUMENTS
 async function handleDocUpload(input){
   const files = Array.from(input.files); if(!files.length) return;
@@ -890,7 +947,7 @@ async function previewDoc(id){
   openMo('docModal');
 }
 function fmtFileSize(b){if(b<1024)return b+'B';if(b<1024*1024)return(b/1024).toFixed(1)+'KB';return(b/1024/1024).toFixed(1)+'MB';}
-
+ 
 async function updateStorageBar(pid){
   const el = document.getElementById('storageBar');
   el.style.display = 'block';
@@ -910,7 +967,7 @@ async function updateStorageBar(pid){
     document.getElementById('storFill').className = 'stor-fill';
   }
 }
-
+ 
 function renderPatientVisits(vis){
   const el = document.getElementById('hpVisits');
   if(!vis.length){ el.innerHTML=`<div class="empty" style="padding:16px 0"><p style="font-size:14px">No visits yet</p></div>`; return; }
@@ -925,7 +982,7 @@ function renderPatientVisits(vis){
       <div class="ha">Rs. ${(v.net||0).toLocaleString()}</div>
     </div>`).join('');
 }
-
+ 
 // PATIENT PHOTO in history page
 function handlePatientPhoto(input){
   const file=input.files[0]; if(!file) return;
@@ -946,7 +1003,7 @@ function handlePatientPhoto(input){
   };
   r.readAsDataURL(file);
 }
-
+ 
 // ════════════════════════════════════════
 // ADD VISIT
 // ════════════════════════════════════════
@@ -985,7 +1042,7 @@ async function suggestPt(){
   el.innerHTML=m.map(p=>`<div onclick="prefillPt('${p.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bd);font-size:14px"><strong>${p.name}</strong> <span class="ts">${p.age?p.age+' yrs':''} ${p.phone?'· '+p.phone:''}</span></div>`).join('');
 }
 document.addEventListener('click',e=>{if(!e.target.closest('#ptSugg')&&e.target.id!=='fName') document.getElementById('ptSugg').style.display='none';});
-
+ 
 async function prefillPt(id){
   //closeMo('patientModal');
   activePtId=id;
@@ -1039,7 +1096,7 @@ async function saveVisit(){
   vis.push(v); await DB.set('ma_visits',vis);
   toast('Visit saved!'); previewReceipt(v.id); resetForm();
 }
-
+ 
 // ════════════════════════════════════════
 // RECEIPT
 // ════════════════════════════════════════
@@ -1049,11 +1106,14 @@ async function buildReceipt(vid){
   const rno=vid.replace('v_','').slice(-6);
   return `<div class="rw" id="r-${vid}">
     <div class="rh">
-      <div>
-        <div class="rb">${s.businessName||'MediAssist Pro'}<span>${s.tagline||'Home Medical Care'}</span></div>
-        <div style="font-size:13px;color:var(--tx2);margin-top:5px">${s.name} · ${s.rank}</div>
-        ${s.phone?`<div style="font-size:12px;color:var(--tx3)">${s.phone}</div>`:''}
-        ${s.address?`<div style="font-size:12px;color:var(--tx3)">${s.address}</div>`:''}
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        ${s.logo?`<img src="${s.logo}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;flex-shrink:0;border:1px solid var(--bd);padding:2px"/>`:''}
+        <div>
+          <div class="rb">${s.businessName||'MediAssist Pro'}<span>${s.tagline||'Home Medical Care'}</span></div>
+          <div style="font-size:13px;color:var(--tx2);margin-top:5px">${s.name} · ${s.rank}</div>
+          ${s.phone?`<div style="font-size:12px;color:var(--tx3)">${s.phone}</div>`:''}
+          ${s.address?`<div style="font-size:12px;color:var(--tx3)">${s.address}</div>`:''}
+        </div>
       </div>
       <div class="rm"><div style="font-weight:700;font-size:14px">RECEIPT</div><div>#${rno}</div><div>${fmtDate(v.date)}</div><div>${v.time||''}</div></div>
     </div>
@@ -1085,10 +1145,10 @@ async function previewReceipt(vid){
   if(!v){ toast('Visit not found','danger'); return; }
   const p=(await gPts()).find(x=>x.id===v.patientId)||{};
   const s=await gSet();
-
+ 
   // ── Page setup: A5 portrait (420 × 595 pt) ──
   const W=420, H=595, ml=30, mr=W-30, cw=W-60;
-
+ 
   // PDF stream helpers
   // Use Tm (text matrix) for absolute positioning — avoids the Td accumulation bug
   const st=[];
@@ -1108,17 +1168,17 @@ async function previewReceipt(vid){
   }
   function col(r,g,b){ st.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`); }
   function resetCol(){ st.push(`0 0 0 rg`); } */
-
+ 
 // SAVE RECIPT TO DEVICE AS IMAGE 
 async function saveImage(){
   const el = document.getElementById('rcptContent');
-
+ 
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
     backgroundColor: "#ffffff"
   });
-
+ 
   canvas.toBlob(function(blob){
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1146,6 +1206,12 @@ async function renderSettings(){
   } else {
     sAv.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="pu-hint">Tap to upload photo</span>`;
   }
+  const sLogo=document.getElementById('settingsLogo');
+  if(s.logo){
+    sLogo.innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
+  } else {
+    sLogo.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="3 9 7 5 11 9 15 5 19 9"/><circle cx="8.5" cy="14.5" r="1.5"/></svg><span class="pu-hint">Tap to upload logo</span>`;
+  }
   renderSvcSettings();
 }
 function handleSettingsPhoto(input){
@@ -1155,7 +1221,22 @@ function handleSettingsPhoto(input){
     const s=await gSet(); s.photo=e.target.result; await DB.set('ma_settings',s);
     const sAv=document.getElementById('settingsAvatar');
     sAv.innerHTML=`<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    // Also update welcome screen subject photo
+    setWelcomePhoto(s.photo);
     toast('Photo saved!');
+  };
+  r.readAsDataURL(file);
+}
+function handleSettingsLogo(input){
+  const file=input.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    const s=await gSet(); s.logo=e.target.result; await DB.set('ma_settings',s);
+    const sLogo=document.getElementById('settingsLogo');
+    sLogo.innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
+    // Also update welcome screen logo
+    document.getElementById('wLogoWrap').innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;padding:4px"/>`;
+    toast('Logo saved!');
   };
   r.readAsDataURL(file);
 }
@@ -1168,8 +1249,16 @@ async function saveSettings(){
     tagline:document.getElementById('sTag').value.trim(),
     phone:document.getElementById('sPh').value.trim(),
     address:document.getElementById('sAdr').value.trim(),
-    photo:cur.photo||''
+    photo:cur.photo||'',
+    logo:cur.logo||''
   });
+  // Refresh welcome screen display fields live
+  const s=await gSet();
+  document.getElementById('wDisplayName').textContent=s.name||'Your Name';
+  document.getElementById('wDisplayRank').textContent=s.rank||'Rank / Designation';
+  document.getElementById('wTagline').textContent=s.tagline||'Your Mobile Medical Companion';
+  document.getElementById('iName').value=s.name||'';
+  document.getElementById('iRank').value=s.rank||'';
   toast('Settings saved!');
 }
 async function renderSvcSettings(){
@@ -1200,14 +1289,14 @@ async function addSvc(){
   document.getElementById('nSvcName').value=''; document.getElementById('nSvcPrice').value='';
   renderSvcSettings(); toast('Service added!');
 }
-
+ 
 // ════════════════════════════════════════
 // MODALS
 // ════════════════════════════════════════
 function openMo(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
 function closeMo(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeMo(m.id);}));
-
+ 
 // ════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════
@@ -1222,12 +1311,12 @@ function toast(msg,t='ok'){
   <script>
 if ('serviceWorker' in navigator) {
   let newWorker;
-
+ 
   navigator.serviceWorker.register('./sw.js').then(reg => {
-
+ 
     reg.addEventListener('updatefound', () => {
       newWorker = reg.installing;
-
+ 
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
           showUpdatePopup();
@@ -1235,14 +1324,14 @@ if ('serviceWorker' in navigator) {
       });
     });
   });
-
+ 
   function showUpdatePopup() {
     const update = confirm("New update available. Update now?");
     if (update && newWorker) {
       newWorker.postMessage('SKIP_WAITING');
     }
   }
-
+ 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload();
   });
