@@ -128,6 +128,39 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .sv{font-size:26px;font-weight:700;color:var(--p)}
 .sl{font-size:12px;color:var(--tx3);margin-top:1px}
  
+/* DASHBOARD */
+.dash-filters{display:flex;gap:7px;flex-wrap:wrap}
+.dpill{background:var(--sur);border:1.5px solid var(--bd2);border-radius:20px;padding:6px 15px;font-size:13px;font-weight:600;color:var(--tx2);cursor:pointer;transition:all .18s}
+.dpill.on{background:var(--p);color:#fff;border-color:var(--p)}
+.dpill:hover:not(.on){border-color:var(--pl);color:var(--p)}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.dash-grid{grid-template-columns:1fr}}
+.kpi-card{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:16px 18px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--p);border-radius:var(--rl) var(--rl) 0 0}
+.kpi-card.kpi-green::before{background:var(--ok)}
+.kpi-card.kpi-amber::before{background:var(--warn)}
+.kpi-card.kpi-cyan::before{background:var(--ac)}
+.kpi-card.kpi-red::before{background:var(--err)}
+.kpi-v{font-size:24px;font-weight:700;color:var(--tx);line-height:1.2;margin-top:4px}
+.kpi-l{font-size:11px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.kpi-icon{position:absolute;top:14px;right:14px;opacity:.1;width:32px;height:32px}
+.sbar-row{margin-bottom:11px}
+.sbar-row:last-child{margin-bottom:0}
+.sbar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.sbar-name{font-size:13px;font-weight:600;color:var(--tx);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbar-cnt{font-size:12px;color:var(--tx3);flex-shrink:0;margin-left:8px}
+.sbar-track{background:var(--bg);border-radius:20px;height:7px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--p),var(--ac));transition:width .5s}
+.pt-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.pt-row:last-child{border-bottom:none}
+.pt-rank{width:24px;height:24px;border-radius:50%;background:var(--bg);border:1px solid var(--bd2);font-size:11px;font-weight:700;color:var(--tx3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pt-rank.gold{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.pt-rank.silver{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
+.pt-rank.bronze{background:#fef9ee;color:#a16207;border-color:#fde68a}
+.pt-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-meta{font-size:12px;color:var(--tx3)}
+.pt-rev{font-size:14px;font-weight:700;color:var(--ok);flex-shrink:0;white-space:nowrap}
+ 
 /* PHOTO UPLOAD */
 .photo-upload-area{width:100px;height:100px;border-radius:50%;border:2.5px dashed var(--bd2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;overflow:hidden;flex-shrink:0;background:var(--sur2)}
 .photo-upload-area:hover{border-color:var(--pl)}
@@ -217,6 +250,9 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .tsm{font-size:13px}.txs{font-size:12px}.ts{color:var(--tx2)}.te{color:var(--err)}.fw6{font-weight:600}
 .divider{border:none;border-top:1px solid var(--bd);margin:16px 0}
 .empty{text-align:center;padding:36px 18px;color:var(--tx3)}
+.trash-btn{background:#fff;border:1.5px solid #fecaca;border-radius:var(--rs);width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .18s,border-color .18s;color:var(--err);padding:0}
+.trash-btn:hover{background:#fee2e2;border-color:#f87171}
+.trash-btn svg{width:16px;height:16px;pointer-events:none}
 .empty svg{width:48px;height:48px;margin-bottom:10px;opacity:.3}
 .empty p{font-size:15px;font-weight:600}.empty span{font-size:13px}
 #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 20px;border-radius:30px;font-size:14px;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:opacity .28s;white-space:nowrap}
@@ -283,6 +319,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
  
   <!-- DASHBOARD -->
   <div id="pg-dashboard" class="pw">
+    <!-- Header -->
     <div class="flex ic jb mb12">
       <div>
         <div class="ptitle" id="dashGreet">Welcome!</div>
@@ -290,13 +327,43 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       </div>
       <button class="btn bp" onclick="go('addVisit',null)">+ New Visit</button>
     </div>
-    <div class="sgrid" id="statsGrid"></div>
-    <div class="card">
-      <div class="flex ic jb mb12">
-        <h3>Recent Visits</h3>
-        <button class="btn bg bsm" onclick="go('patients',null)">All Patients →</button>
+    <!-- Time Range Filter -->
+    <div class="dash-filters mb16">
+      <button class="dpill on" data-range="today" onclick="setDashRange('today',this)">Today</button>
+      <button class="dpill" data-range="week" onclick="setDashRange('week',this)">This Week</button>
+      <button class="dpill" data-range="month" onclick="setDashRange('month',this)">This Month</button>
+      <button class="dpill" data-range="year" onclick="setDashRange('year',this)">This Year</button>
+      <button class="dpill" data-range="all" onclick="setDashRange('all',this)">All Time</button>
+    </div>
+    <!-- KPI Cards -->
+    <div id="statsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
+    <!-- Charts Row -->
+    <div class="dash-grid mb14">
+      <div class="card">
+        <div class="flex ic jb mb12">
+          <h3 id="dashChartTitle">Revenue Trend</h3>
+          <span class="bdg b-blue" id="dashChartBadge"></span>
+        </div>
+        <div id="dashChart"></div>
       </div>
-      <div id="recentVisits"></div>
+      <div class="card">
+        <h3 class="mb12">Top Services</h3>
+        <div id="dashTopSvcs"></div>
+      </div>
+    </div>
+    <!-- Bottom Row -->
+    <div class="dash-grid">
+      <div class="card">
+        <div class="flex ic jb mb12">
+          <h3>Recent Visits</h3>
+          <button class="btn bg bsm" onclick="go('patients',null)">All Patients →</button>
+        </div>
+        <div id="recentVisits"></div>
+      </div>
+      <div class="card">
+        <h3 class="mb12">Top Patients</h3>
+        <div id="dashTopPts"></div>
+      </div>
     </div>
   </div>
  
@@ -721,31 +788,217 @@ function go(pg, btn){
 // ════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════
-async function renderDash(){
-  const pts=await gPts(), vis=await gVis();
-  const tod=new Date().toISOString().slice(0,10);
-  const todV=vis.filter(v=>v.date===tod);
-  const totRev=vis.reduce((s,v)=>s+(v.net||0),0);
-  const todRev=todV.reduce((s,v)=>s+(v.net||0),0);
-  const s=await gSet();
-  const now=new Date(), h=now.getHours();
-  document.getElementById('dashGreet').textContent=`Good ${h<12?'Morning':h<17?'Afternoon':'Evening'}, ${s.name.split(' ')[0]||'Doctor'}!`;
-  document.getElementById('dashDate').textContent=now.toLocaleDateString('en-PK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('statsGrid').innerHTML=`
-    <div class="scard"><div class="sv">${pts.length}</div><div class="sl">Total Patients</div></div>
-    <div class="scard"><div class="sv">${vis.length}</div><div class="sl">Total Visits</div></div>
-    <div class="scard"><div class="sv">${todV.length}</div><div class="sl">Today's Visits</div></div>
-    <div class="scard"><div class="sv" style="color:var(--ok)">Rs.${todRev.toLocaleString()}</div><div class="sl">Today's Earnings</div></div>
-    <div class="scard"><div class="sv" style="color:var(--ok)">Rs.${totRev.toLocaleString()}</div><div class="sl">Total Earnings</div></div>`;
-  const rec=[...vis].sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,6);
-  document.getElementById('recentVisits').innerHTML = rec.length ? rec.map(v=>`
-    <div class="hi" style="cursor:pointer" onclick="openHistory('${v.patientId}')">
-      <div class="hd">${fmtDate(v.date)} ${v.time||''}</div>
-      <div class="hs">${v.patientName}</div>
-      <div class="hn">${v.services.map(s=>s.name).join(', ')}</div>
-      <div class="ha">Rs. ${(v.net||0).toLocaleString()}</div>
-    </div>`).join('') :
-    `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>No visits yet</p><span>Add your first patient visit</span></div>`;
+let dashRange = 'today';
+
+function setDashRange(r, btn) {
+  dashRange = r;
+  document.querySelectorAll('.dpill').forEach(b => b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  else document.querySelector(`.dpill[data-range="${r}"]`)?.classList.add('on');
+  renderDash();
+}
+
+function dashDateRange(range) {
+  const now = new Date();
+  const tod = now.toISOString().slice(0,10);
+  if(range === 'today') return { start: tod, end: tod };
+  if(range === 'week') {
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    return { start: mon.toISOString().slice(0,10), end: tod };
+  }
+  if(range === 'month') {
+    const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+    return { start: `${y}-${m}-01`, end: tod };
+  }
+  if(range === 'year') {
+    return { start: `${now.getFullYear()}-01-01`, end: tod };
+  }
+  return { start: null, end: null };
+}
+
+function filterVisRange(vis, range) {
+  const { start, end } = dashDateRange(range);
+  if(!start) return vis;
+  return vis.filter(v => v.date >= start && v.date <= end);
+}
+
+function buildChartData(vis, range) {
+  const now = new Date();
+  if(range === 'today') {
+    const buckets = Array.from({length:24}, (_,i) => ({ l: i%6===0 ? i+'h' : '', v: 0 }));
+    vis.forEach(v => { const h = parseInt((v.time||'00:00').split(':')[0]); if(buckets[h]) buckets[h].v += (v.net||0); });
+    return buckets;
+  }
+  if(range === 'week') {
+    const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const buckets = labels.map(l => ({ l, v: 0 }));
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7)); mon.setHours(0,0,0,0);
+    vis.forEach(v => {
+      const d = new Date(v.date+'T00:00:00');
+      const idx = Math.floor((d - mon) / 86400000);
+      if(idx >= 0 && idx < 7) buckets[idx].v += (v.net||0);
+    });
+    return buckets;
+  }
+  if(range === 'month') {
+    const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    const buckets = Array.from({length:dim}, (_,i) => ({ l: (i+1)%5===1||i===dim-1 ? String(i+1) : '', v: 0 }));
+    vis.forEach(v => { const d = parseInt(v.date.split('-')[2])-1; if(buckets[d]) buckets[d].v += (v.net||0); });
+    return buckets;
+  }
+  if(range === 'year') {
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const buckets = mo.map(l => ({ l, v: 0 }));
+    vis.forEach(v => { const m = parseInt(v.date.split('-')[1])-1; if(buckets[m]) buckets[m].v += (v.net||0); });
+    return buckets;
+  }
+  // All time — group by year-month
+  if(!vis.length) return [];
+  const map = {};
+  vis.forEach(v => { const k = v.date.slice(0,7); map[k] = (map[k]||0) + (v.net||0); });
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return Object.keys(map).sort().map(k => {
+    const [y, m] = k.split('-');
+    return { l: mo[+m-1]+" '"+y.slice(2), v: map[k] };
+  });
+}
+
+function buildSvgBarChart(data) {
+  const noData = !data.length || data.every(d => d.v === 0);
+  if(noData) return `<div class="empty" style="padding:24px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:38px;height:38px;opacity:.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p style="font-size:13px;margin-top:6px">No revenue data for this period</p></div>`;
+  const W=480, H=155, pL=50, pB=28, pT=10, pR=8;
+  const cW=W-pL-pR, cH=H-pB-pT;
+  const max = Math.max(...data.map(d=>d.v), 1);
+  const n = data.length;
+  const slot = cW / n;
+  const bw = Math.max(5, Math.min(34, slot * 0.62));
+
+  const ySteps = [0.25, 0.5, 0.75, 1];
+  const grid = ySteps.map(f => {
+    const y = pT + cH - Math.round(f * cH);
+    const lbl = max*f >= 1000 ? ((max*f)/1000).toFixed(1)+'k' : Math.round(max*f);
+    return `<line x1="${pL}" y1="${y}" x2="${W-pR}" y2="${y}" stroke="var(--bd)" stroke-width="1"/>
+<text x="${pL-5}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--tx3)">${lbl}</text>`;
+  }).join('');
+
+  const step = Math.ceil(n / 10);
+  const bars = data.map((d, i) => {
+    const bh = Math.max(d.v > 0 ? 2 : 0, Math.round((d.v/max)*cH));
+    const x = pL + i*slot + (slot-bw)/2;
+    const y = pT + cH - bh;
+    const alpha = d.v > 0 ? 1 : 0;
+    const lbl = (d.l && (i%step===0 || i===n-1))
+      ? `<text x="${x+bw/2}" y="${H-7}" text-anchor="middle" font-size="9" fill="var(--tx3)">${d.l}</text>` : '';
+    return `<rect x="${x.toFixed(1)}" y="${y}" width="${bw.toFixed(1)}" height="${bh}" rx="3" fill="var(--p)" opacity="${alpha}"/>${lbl}`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible">${grid}${bars}</svg>`;
+}
+
+async function renderDash() {
+  const pts = await gPts(), allVis = await gVis(), s = await gSet();
+  const now = new Date(), h = now.getHours();
+
+  document.getElementById('dashGreet').textContent = `Good ${h<12?'Morning':h<17?'Afternoon':'Evening'}, ${(s.name||'Doctor').split(' ')[0]}!`;
+  document.getElementById('dashDate').textContent = now.toLocaleDateString('en-PK', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const vis = filterVisRange(allVis, dashRange);
+  const { start, end } = dashDateRange(dashRange);
+
+  // ── KPI calculations ──────────────────
+  const revenue   = vis.reduce((a,v) => a+(v.net||0), 0);
+  const discount  = vis.reduce((a,v) => a+(v.discount||0), 0);
+ // const avgRev    = vis.length ? Math.round(revenue / vis.length) : 0;
+  const newPts    = start
+    ? pts.filter(p => {
+        const first = allVis.filter(v=>v.patientId===p.id).sort((a,b)=>a.date.localeCompare(b.date))[0];
+        return first && first.date >= start && first.date <= end;
+      }).length
+    : pts.length;
+
+  const kpiIcon = (path) => `<svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${path}</svg>`;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="kpi-card">
+      ${kpiIcon('<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/>')}
+      <div class="kpi-l">Visits</div>
+      <div class="kpi-v">${vis.length}</div>
+    </div>
+    <div class="kpi-card kpi-green">
+      ${kpiIcon('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/>')}
+      <div class="kpi-l">Revenue</div>
+      <div class="kpi-v" style="color:var(--ok)">Rs.&nbsp;${revenue.toLocaleString()}</div>
+    </div>
+    /* <div class="kpi-card kpi-cyan">
+      ${kpiIcon('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>')}
+      <div class="kpi-l">Avg / Visit</div>
+      <div class="kpi-v" style="font-size:20px;color:var(--ac)">Rs.&nbsp;${avgRev.toLocaleString()}</div>
+    </div> */
+    <div class="kpi-card">
+      ${kpiIcon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>')}
+      <div class="kpi-l">New Patients</div>
+      <div class="kpi-v">${newPts}</div>
+    </div>
+    <div class="kpi-card kpi-amber">
+      ${kpiIcon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}
+      <div class="kpi-l">Discount Given</div>
+      <div class="kpi-v" style="font-size:20px;color:var(--warn)">Rs.&nbsp;${discount.toLocaleString()}</div>
+    </div>`;
+
+  // ── Revenue chart ─────────────────────
+  const chartTitles = { today:'Hourly Revenue — Today', week:'Daily Revenue — This Week', month:'Daily Revenue — This Month', year:'Monthly Revenue — This Year', all:'All-Time Revenue' };
+  document.getElementById('dashChartTitle').textContent = chartTitles[dashRange] || 'Revenue Trend';
+  document.getElementById('dashChartBadge').textContent = `Rs. ${revenue.toLocaleString()}`;
+  document.getElementById('dashChart').innerHTML = buildSvgBarChart(buildChartData(vis, dashRange));
+
+  // ── Top services ──────────────────────
+  const svcMap = {};
+  vis.forEach(v => (v.services||[]).forEach(sv => { svcMap[sv.name] = (svcMap[sv.name]||0)+1; }));
+  const topSvcs = Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxSvc = topSvcs[0]?.[1] || 1;
+  document.getElementById('dashTopSvcs').innerHTML = topSvcs.length
+    ? topSvcs.map(([name,cnt]) => `
+      <div class="sbar-row">
+        <div class="sbar-top">
+          <span class="sbar-name">${name}</span>
+          <span class="sbar-cnt">${cnt}×</span>
+        </div>
+        <div class="sbar-track"><div class="sbar-fill" style="width:${Math.round((cnt/maxSvc)*100)}%"></div></div>
+      </div>`).join('')
+    : `<div class="empty" style="padding:18px 0"><p style="font-size:13px">No services for this period</p></div>`;
+
+  // ── Recent visits ─────────────────────
+  const rec = [...vis].sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time)).slice(0,6);
+  document.getElementById('recentVisits').innerHTML = rec.length
+    ? rec.map(v=>`
+      <div class="hi" style="cursor:pointer;margin-bottom:8px" onclick="openHistory('${v.patientId}')">
+        <div class="hd">${fmtDate(v.date)} ${v.time||''}</div>
+        <div class="hs">${v.patientName}</div>
+        <div class="hn">${(v.services||[]).map(sv=>sv.name).join(', ')}</div>
+        <div class="ha">Rs. ${(v.net||0).toLocaleString()}</div>
+      </div>`).join('')
+    : `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>No visits this period</p><span>Switch range or add a new visit</span></div>`;
+
+  // ── Top patients ──────────────────────
+  const ptRev = {}, ptCnt = {}, ptName = {};
+  vis.forEach(v => {
+    ptRev[v.patientId]  = (ptRev[v.patientId]||0) + (v.net||0);
+    ptCnt[v.patientId]  = (ptCnt[v.patientId]||0) + 1;
+    ptName[v.patientId] = v.patientName;
+  });
+  const topPts = Object.entries(ptRev).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const rankCls = ['gold','silver','bronze','',''];
+  document.getElementById('dashTopPts').innerHTML = topPts.length
+    ? topPts.map(([pid,rev],i) => `
+      <div class="pt-row">
+        <div class="pt-rank ${rankCls[i]}">${i+1}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pt-name">${ptName[pid]||'Unknown'}</div>
+          <div class="pt-meta">${ptCnt[pid]} visit${ptCnt[pid]!==1?'s':''}</div>
+        </div>
+        <div class="pt-rev">Rs.&nbsp;${rev.toLocaleString()}</div>
+      </div>`).join('')
+    : `<div class="empty" style="padding:18px 0"><p style="font-size:13px">No patient data for this period</p></div>`;
 }
  
 // ════════════════════════════════════════
@@ -767,7 +1020,12 @@ async function renderPatients(){
         <div class="pm">${p.age?p.age+' yrs':''} ${p.age&&p.gender?'·':''} ${p.gender||''} ${p.phone?'· '+p.phone:''}</div>
         ${last?`<div class="txs ts mt4">Last visit: ${fmtDate(last.date)}</div>`:''}
       </div>
-      <div class="pst"><div class="vc">${pvs.length}</div><div class="vl">visit${pvs.length!==1?'s':''}</div></div>
+      <div class="pst" style="display:flex;align-items:center;gap:10px">
+        <div><div class="vc">${pvs.length}</div><div class="vl">visit${pvs.length!==1?'s':''}</div></div>
+        <button class="trash-btn" title="Delete Patient" onclick="event.stopPropagation();deletePatient('${p.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -975,7 +1233,12 @@ function renderPatientVisits(vis){
     <div class="hi">
       <div class="flex ic jb">
         <div class="hd">${fmtDate(v.date)} ${v.time||''}</div>
-        <button class="btn bg bsm" style="padding:4px 10px;font-size:12px" onclick="previewReceipt('${v.id}')">Receipt</button>
+        <div class="flex ic g8">
+          <button class="btn bg bsm" style="padding:4px 10px;font-size:12px" onclick="previewReceipt('${v.id}')">Receipt</button>
+          <button class="trash-btn" title="Delete Visit" onclick="deleteVisit('${v.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
       </div>
       <div class="hs">${v.services.map(s=>s.name).join(', ')}</div>
       ${v.notes?`<div class="hn">${v.notes}</div>`:''}
@@ -983,6 +1246,38 @@ function renderPatientVisits(vis){
     </div>`).join('');
 }
  
+// DELETE PATIENT
+async function deletePatient(id){
+  if(!confirm('Delete this patient and ALL their visits, history notes, and documents? This cannot be undone.')) return;
+  const pts = (await gPts()).filter(p=>p.id!==id);
+  await DB.set('ma_patients', pts);
+  // Remove all visits for this patient
+  const vis = (await gVis()).filter(v=>v.patientId!==id);
+  await DB.set('ma_visits', vis);
+  // Remove history notes and docs keys
+  await DB.set('ma_hist_'+id, []);
+  await DB.set('ma_docs_'+id, []);
+  toast('Patient deleted');
+  renderPatients();
+}
+
+// DELETE VISIT
+async function deleteVisit(id){
+  if(!confirm('Delete this visit record?')) return;
+  const vis = (await gVis()).filter(v=>v.id!==id);
+  await DB.set('ma_visits', vis);
+  // Re-render visits for current patient
+  const updatedVis = vis.filter(v=>v.patientId===historyPatientId).sort((a,b)=>b.date.localeCompare(a.date));
+  renderPatientVisits(updatedVis);
+  // Refresh stats
+  const total = updatedVis.reduce((s,v)=>s+(v.net||0),0);
+  document.getElementById('hpStats').innerHTML = `
+    <div class="scard"><div class="sv" style="font-size:20px">${updatedVis.length}</div><div class="sl">Visits</div></div>
+    <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
+    <div class="scard"><div class="sv" style="font-size:14px">${updatedVis[0]?fmtDate(updatedVis[0].date):'—'}</div><div class="sl">Last Visit</div></div>`;
+  toast('Visit deleted');
+}
+
 // PATIENT PHOTO in history page
 function handlePatientPhoto(input){
   const file=input.files[0]; if(!file) return;

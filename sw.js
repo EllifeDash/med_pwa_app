@@ -1,4 +1,4 @@
-const CACHE = 'mediassist-v4.1';
+const CACHE = 'mediassist-v5.0';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
