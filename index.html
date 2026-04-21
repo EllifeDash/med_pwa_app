@@ -909,7 +909,7 @@ async function renderDash() {
   // ── KPI calculations ──────────────────
   const revenue   = vis.reduce((a,v) => a+(v.net||0), 0);
   const discount  = vis.reduce((a,v) => a+(v.discount||0), 0);
- // const avgRev    = vis.length ? Math.round(revenue / vis.length) : 0;
+  const avgRev    = vis.length ? Math.round(revenue / vis.length) : 0;
   const newPts    = start
     ? pts.filter(p => {
         const first = allVis.filter(v=>v.patientId===p.id).sort((a,b)=>a.date.localeCompare(b.date))[0];
@@ -929,11 +929,11 @@ async function renderDash() {
       <div class="kpi-l">Revenue</div>
       <div class="kpi-v" style="color:var(--ok)">Rs.&nbsp;${revenue.toLocaleString()}</div>
     </div>
-    /* <div class="kpi-card kpi-cyan">
+    <div class="kpi-card kpi-cyan">
       ${kpiIcon('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>')}
       <div class="kpi-l">Avg / Visit</div>
       <div class="kpi-v" style="font-size:20px;color:var(--ac)">Rs.&nbsp;${avgRev.toLocaleString()}</div>
-    </div> */
+    </div>
     <div class="kpi-card">
       ${kpiIcon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>')}
       <div class="kpi-l">New Patients</div>
