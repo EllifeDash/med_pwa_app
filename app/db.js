@@ -5,7 +5,7 @@ export function saveData(data) {
 // DATA LAYER — IndexedDB (async, ~50MB+ storage)
 // Migrations: on first run, copies any existing localStorage data then clears it.
 // ════════════════════════════════════════
-const DB = (() => {
+export const DB = (() => {
   const DB_NAME = 'mediassist', DB_VER = 1, STORE = 'kv';
   let _db = null;
  
