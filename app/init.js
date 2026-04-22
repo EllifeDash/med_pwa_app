@@ -3,6 +3,8 @@ export function initApp() {
 }
 import { generateId } from "./utils.js";
 import { saveData } from "./db.js";
+import { DB } from "./db.js";
+
 // INIT
 // ════════════════════════════════════════
 window.addEventListener('load', async () => {
