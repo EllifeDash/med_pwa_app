@@ -1,15 +1,17 @@
 // ════════════════════════════════════════
 // visits.js — Add Visit Page
-// Handles service tag selection, price
-// editing, patient autocomplete,
-// form reset, and saving a new visit.
+// UI logic (tags, table, autocomplete,
+// form reset, calcTotal) unchanged.
+// CHANGED: saveVisit() now writes to
+// Firestore instead of IndexedDB arrays.
 // ════════════════════════════════════════
 
 // ── Shared state ─────────────────────────
-let selSvcs   = {};   // { serviceId: price }
+let selSvcs    = {};   // { serviceId: price }
 let activePtId = null;
 
 // ── Service tags & table ──────────────────
+// No changes below — purely UI logic.
 
 async function renderSvcTags() {
   const svcs = await gSvc();
@@ -61,6 +63,7 @@ function calcTotal() {
 }
 
 // ── Patient autocomplete ──────────────────
+// No changes — reads from gPts() which uses the cache.
 
 async function suggestPt() {
   const q  = document.getElementById('fName').value.toLowerCase().trim();
@@ -79,16 +82,11 @@ async function suggestPt() {
     </div>`).join('');
 }
 
-// Close autocomplete when clicking elsewhere
 document.addEventListener('click', e => {
   if (!e.target.closest('#ptSugg') && e.target.id !== 'fName')
     document.getElementById('ptSugg').style.display = 'none';
 });
 
-/**
- * Pre-fill the Add Visit form with an existing patient's data.
- * @param {string} id - Patient ID
- */
 async function prefillPt(id) {
   activePtId = id;
   const p    = (await gPts()).find(x => x.id === id);
@@ -96,7 +94,7 @@ async function prefillPt(id) {
   go('addVisit', null);
   setTimeout(() => {
     document.getElementById('fName').value   = p.name;
-    document.getElementById('fAge').value    = p.age  || '';
+    document.getElementById('fAge').value    = p.age    || '';
     document.getElementById('fGender').value = p.gender || '';
     document.getElementById('fPhone').value  = p.phone  || '';
     document.getElementById('fAddr').value   = p.address || '';
@@ -106,11 +104,10 @@ async function prefillPt(id) {
   }, 60);
 }
 
-/**
- * Reset the Add Visit form to a blank state.
- */
 function resetForm() {
-  ['fName','fAge','fPhone','fAddr','fNotes','fDisc'].forEach(id => document.getElementById(id).value = '');
+  ['fName','fAge','fPhone','fAddr','fNotes','fDisc'].forEach(id =>
+    document.getElementById(id).value = ''
+  );
   document.getElementById('fGender').value = '';
   const now = new Date();
   document.getElementById('fDate').valueAsDate = now;
@@ -125,65 +122,80 @@ function resetForm() {
 // ── Save visit ────────────────────────────
 
 /**
- * Validate the form, upsert the patient, save the visit, then show receipt preview.
+ * CHANGED: saveVisit() now persists to Firestore.
+ * Patient upsert → users/{uid}/patients/{pid}
+ * Visit write   → users/{uid}/visits/{vid}
+ * Both use setDoc (create-or-merge).
  */
 async function saveVisit() {
   const name = document.getElementById('fName').value.trim();
-  if (!name) { toast('Patient name is required', 'danger'); return; }
-  if (!Object.keys(selSvcs).length) { toast('Select at least one service', 'danger'); return; }
+  if (!name)                          { toast('Patient name is required', 'danger'); return; }
+  if (!Object.keys(selSvcs).length)   { toast('Select at least one service', 'danger'); return; }
 
-  const pts  = await gPts();
-  const vis  = await gVis();
-  const svcs = await gSvc();
-  let pt;
+  try {
+    const pts  = await gPts();
+    const svcs = await gSvc();
+    let pt;
 
-  if (activePtId) pt = pts.find(p => p.id === activePtId);
-  if (!pt)        pt = pts.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (activePtId) pt = pts.find(p => p.id === activePtId);
+    if (!pt)        pt = pts.find(p => p.name.toLowerCase() === name.toLowerCase());
 
-  if (!pt) {
-    // New patient
-    pt = {
-      id:        'p_' + Date.now(),
-      name,
-      age:       +document.getElementById('fAge').value    || null,
-      gender:     document.getElementById('fGender').value,
-      phone:      document.getElementById('fPhone').value.trim(),
-      address:    document.getElementById('fAddr').value.trim(),
-      createdAt:  new Date().toISOString()
+    if (!pt) {
+      // ── New patient ──
+      pt = {
+        id:        'p_' + Date.now(),
+        name,
+        age:       +document.getElementById('fAge').value    || null,
+        gender:     document.getElementById('fGender').value,
+        phone:      document.getElementById('fPhone').value.trim(),
+        address:    document.getElementById('fAddr').value.trim(),
+        createdAt:  new Date().toISOString(),
+      };
+    } else {
+      // ── Update existing patient fields ──
+      pt.age     = +document.getElementById('fAge').value           || pt.age;
+      pt.gender  =  document.getElementById('fGender').value        || pt.gender;
+      pt.phone   =  document.getElementById('fPhone').value.trim()  || pt.phone;
+      pt.address =  document.getElementById('fAddr').value.trim()   || pt.address;
+    }
+
+    // CHANGED: write patient to Firestore (merge keeps existing photo etc.)
+    await FS.setDoc(userDoc('patients', pt.id), pt, { merge: true });
+
+    const sub  = Object.values(selSvcs).reduce((a, b) => a + (+b || 0), 0);
+    const disc = +(document.getElementById('fDisc').value || 0);
+
+    const v = {
+      id:          'v_' + Date.now(),
+      patientId:    pt.id,
+      patientName:  pt.name,
+      date:         document.getElementById('fDate').value,
+      time:         document.getElementById('fTime').value,
+      notes:        document.getElementById('fNotes').value.trim(),
+      services:     Object.keys(selSvcs).map(id => {
+        const s = svcs.find(x => x.id == id);
+        return { id: +id, name: s ? s.name : 'Service', price: +selSvcs[id] };
+      }),
+      subtotal:   sub,
+      discount:   disc,
+      net:        Math.max(0, sub - disc),
+      createdAt:  new Date().toISOString(),
     };
-    pts.push(pt);
-  } else {
-    // Update existing
-    pt.age     = +document.getElementById('fAge').value    || pt.age;
-    pt.gender  =  document.getElementById('fGender').value || pt.gender;
-    pt.phone   =  document.getElementById('fPhone').value.trim()  || pt.phone;
-    pt.address =  document.getElementById('fAddr').value.trim()   || pt.address;
+
+    // CHANGED: write visit to Firestore
+    await FS.setDoc(userDoc('visits', v.id), v);
+
+    // Optimistically update cache (onSnapshot will also confirm)
+    const cachedPt = window._cache.patients.find(p => p.id === pt.id);
+    if (cachedPt) Object.assign(cachedPt, pt);
+    else window._cache.patients.push(pt);
+    window._cache.visits.push(v);
+
+    toast('Visit saved!');
+    previewReceipt(v.id);
+    resetForm();
+  } catch (err) {
+    console.error('saveVisit error:', err);
+    toast('Error saving visit', 'danger');
   }
-  await DB.set('ma_patients', pts);
-
-  const sub  = Object.values(selSvcs).reduce((a, b) => a + (+b || 0), 0);
-  const disc = +(document.getElementById('fDisc').value || 0);
-
-  const v = {
-    id:          'v_' + Date.now(),
-    patientId:    pt.id,
-    patientName:  pt.name,
-    date:         document.getElementById('fDate').value,
-    time:         document.getElementById('fTime').value,
-    notes:        document.getElementById('fNotes').value.trim(),
-    services:     Object.keys(selSvcs).map(id => {
-      const s = svcs.find(x => x.id == id);
-      return { id: +id, name: s ? s.name : 'Service', price: +selSvcs[id] };
-    }),
-    subtotal:  sub,
-    discount:  disc,
-    net:       Math.max(0, sub - disc),
-    createdAt: new Date().toISOString()
-  };
-
-  vis.push(v);
-  await DB.set('ma_visits', vis);
-  toast('Visit saved!');
-  previewReceipt(v.id);
-  resetForm();
 }

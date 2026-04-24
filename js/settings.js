@@ -1,12 +1,10 @@
 // ════════════════════════════════════════
 // settings.js — Settings Page
-// Handles business profile, photo/logo
-// upload, and service pricing CRUD.
+// UI unchanged.
+// CHANGED: all DB.set() calls replaced with
+// Firestore setDoc/deleteDoc writes.
 // ════════════════════════════════════════
 
-/**
- * Populate all Settings form fields from stored settings.
- */
 async function renderSettings() {
   const s = await gSet();
   document.getElementById('sName').value = s.name         || '';
@@ -49,15 +47,22 @@ async function renderSettings() {
 function handleSettingsPhoto(input) {
   const file = input.files[0];
   if (!file) return;
-  const r   = new FileReader();
-  r.onload  = async e => {
-    const s = await gSet();
-    s.photo = e.target.result;
-    await DB.set('ma_settings', s);
-    document.getElementById('settingsAvatar').innerHTML =
-      `<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    setWelcomePhoto(s.photo);
-    toast('Photo saved!');
+  const r  = new FileReader();
+  r.onload = async e => {
+    try {
+      const s = await gSet();
+      s.photo = e.target.result;
+      // CHANGED: write to Firestore
+      await FS.setDoc(userDoc('settings', 'profile'), s);
+      window._cache.settings = s;
+      document.getElementById('settingsAvatar').innerHTML =
+        `<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+      setWelcomePhoto(s.photo);
+      toast('Photo saved!');
+    } catch (err) {
+      console.error('handleSettingsPhoto error:', err);
+      toast('Error saving photo', 'danger');
+    }
   };
   r.readAsDataURL(file);
 }
@@ -65,16 +70,23 @@ function handleSettingsPhoto(input) {
 function handleSettingsLogo(input) {
   const file = input.files[0];
   if (!file) return;
-  const r   = new FileReader();
-  r.onload  = async e => {
-    const s = await gSet();
-    s.logo  = e.target.result;
-    await DB.set('ma_settings', s);
-    document.getElementById('settingsLogo').innerHTML =
-      `<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
-    document.getElementById('wLogoWrap').innerHTML =
-      `<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;padding:4px"/>`;
-    toast('Logo saved!');
+  const r  = new FileReader();
+  r.onload = async e => {
+    try {
+      const s = await gSet();
+      s.logo  = e.target.result;
+      // CHANGED: write to Firestore
+      await FS.setDoc(userDoc('settings', 'profile'), s);
+      window._cache.settings = s;
+      document.getElementById('settingsLogo').innerHTML =
+        `<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
+      document.getElementById('wLogoWrap').innerHTML =
+        `<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;padding:4px"/>`;
+      toast('Logo saved!');
+    } catch (err) {
+      console.error('handleSettingsLogo error:', err);
+      toast('Error saving logo', 'danger');
+    }
   };
   r.readAsDataURL(file);
 }
@@ -82,32 +94,40 @@ function handleSettingsLogo(input) {
 // ── Save profile settings ─────────────────
 
 async function saveSettings() {
-  const cur = await gSet();
-  await DB.set('ma_settings', {
-    name:         document.getElementById('sName').value.trim(),
-    rank:         document.getElementById('sRank').value.trim(),
-    businessName: document.getElementById('sBiz').value.trim(),
-    tagline:      document.getElementById('sTag').value.trim(),
-    phone:        document.getElementById('sPh').value.trim(),
-    address:      document.getElementById('sAdr').value.trim(),
-    photo:        cur.photo || '',
-    logo:         cur.logo  || ''
-  });
+  try {
+    const cur     = await gSet();
+    const updated = {
+      name:         document.getElementById('sName').value.trim(),
+      rank:         document.getElementById('sRank').value.trim(),
+      businessName: document.getElementById('sBiz').value.trim(),
+      tagline:      document.getElementById('sTag').value.trim(),
+      phone:        document.getElementById('sPh').value.trim(),
+      address:      document.getElementById('sAdr').value.trim(),
+      photo:        cur.photo || '',
+      logo:         cur.logo  || '',
+    };
 
-  const s = await gSet();
-  document.getElementById('wDisplayName').textContent = s.name    || 'Your Name';
-  document.getElementById('wDisplayRank').textContent = s.rank    || 'Rank / Designation';
-  document.getElementById('wTagline').textContent     = s.tagline || 'Your Mobile Medical Companion';
-  document.getElementById('iName').value = s.name || '';
-  document.getElementById('iRank').value = s.rank || '';
-  toast('Settings saved!');
+    // CHANGED: write to Firestore, invalidate cache
+    await FS.setDoc(userDoc('settings', 'profile'), updated);
+    window._cache.settings = updated;
+
+    document.getElementById('wDisplayName').textContent = updated.name    || 'Your Name';
+    document.getElementById('wDisplayRank').textContent = updated.rank    || 'Rank / Designation';
+    document.getElementById('wTagline').textContent     = updated.tagline || 'Your Mobile Medical Companion';
+    document.getElementById('iName').value = updated.name || '';
+    document.getElementById('iRank').value = updated.rank || '';
+    toast('Settings saved!');
+  } catch (err) {
+    console.error('saveSettings error:', err);
+    toast('Error saving settings', 'danger');
+  }
 }
 
 // ── Service pricing CRUD ──────────────────
 
 async function renderSvcSettings() {
   const svcs = (await gSvc()).sort((a, b) => a.name.localeCompare(b.name));
-  document.getElementById('svcCnt').textContent  = svcs.length;
+  document.getElementById('svcCnt').textContent   = svcs.length;
   document.getElementById('svcTblBody').innerHTML = svcs.map((s, i) => `
     <tr>
       <td class="ts">${i + 1}</td>
@@ -125,28 +145,52 @@ async function renderSvcSettings() {
     </tr>`).join('');
 }
 
-async function updSvc(id, f, v) {
-  const svcs = await gSvc();
-  const s    = svcs.find(x => x.id === id);
-  if (s) { s[f] = v; await DB.set('ma_services', svcs); }
+async function updSvc(id, field, value) {
+  try {
+    const svcs = await gSvc();
+    const s    = svcs.find(x => x.id === id);
+    if (!s) return;
+    s[field] = value;
+    // CHANGED: write individual service doc to Firestore
+    await FS.setDoc(userDoc('services', String(id)), s);
+    // Update cache in-place (no need to reload full list)
+    const cached = window._cache.services.find(x => x.id === id);
+    if (cached) cached[field] = value;
+  } catch (err) {
+    console.error('updSvc error:', err);
+  }
 }
 
 async function delSvc(id) {
   if (!confirm('Remove this service?')) return;
-  await DB.set('ma_services', (await gSvc()).filter(s => s.id !== id));
-  renderSvcSettings();
-  toast('Removed');
+  try {
+    // CHANGED: delete from Firestore
+    await FS.deleteDoc(userDoc('services', String(id)));
+    window._cache.services = window._cache.services.filter(s => s.id !== id);
+    renderSvcSettings();
+    toast('Removed');
+  } catch (err) {
+    console.error('delSvc error:', err);
+    toast('Error removing service', 'danger');
+  }
 }
 
 async function addSvc() {
   const n = document.getElementById('nSvcName').value.trim();
   if (!n) { toast('Enter a name', 'danger'); return; }
-  const svcs = await gSvc();
-  const nid  = Math.max(...svcs.map(s => s.id), 0) + 1;
-  svcs.push({ id: nid, name: n, price: +(document.getElementById('nSvcPrice').value) || 0 });
-  await DB.set('ma_services', svcs);
-  document.getElementById('nSvcName').value  = '';
-  document.getElementById('nSvcPrice').value = '';
-  renderSvcSettings();
-  toast('Service added!');
+  try {
+    const svcs = await gSvc();
+    const nid  = Math.max(...svcs.map(s => s.id), 0) + 1;
+    const svc  = { id: nid, name: n, price: +(document.getElementById('nSvcPrice').value) || 0 };
+    // CHANGED: write to Firestore
+    await FS.setDoc(userDoc('services', String(nid)), svc);
+    window._cache.services.push(svc);
+    document.getElementById('nSvcName').value  = '';
+    document.getElementById('nSvcPrice').value = '';
+    renderSvcSettings();
+    toast('Service added!');
+  } catch (err) {
+    console.error('addSvc error:', err);
+    toast('Error adding service', 'danger');
+  }
 }

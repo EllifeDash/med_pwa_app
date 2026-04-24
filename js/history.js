@@ -1,25 +1,25 @@
 // ════════════════════════════════════════
 // history.js — Patient History Page
-// Covers: history notes CRUD, document
-// upload/preview/delete, visit list with
-// delete, patient photo, and storage bar.
+// UI and structure unchanged.
+// CHANGED sections marked with // CHANGED.
+// • History notes CRUD  → Firestore
+// • deleteVisit()       → Firestore
+// • handlePatientPhoto  → Firestore
+// • Documents (base64)  → still IDB
 // ════════════════════════════════════════
 
-// ── Shared state ─────────────────────────
-let historyPatientId    = null;
-let editingHistNoteId   = null;
+let historyPatientId  = null;
+let editingHistNoteId = null;
 
 // ── Open history page ─────────────────────
-/**
- * Load and display the full history page for a patient.
- * @param {string} pid - Patient ID
- */
+
 async function openHistory(pid) {
   historyPatientId = pid;
-  const p   = (await gPts()).find(x => x.id === pid);
+  const p = (await gPts()).find(x => x.id === pid);
   if (!p) return;
 
-  const vis   = (await gVis()).filter(v => v.patientId === pid).sort((a, b) => b.date.localeCompare(a.date));
+  const vis   = (await gVis()).filter(v => v.patientId === pid)
+                              .sort((a, b) => b.date.localeCompare(a.date));
   const total = vis.reduce((s, v) => s + (v.net || 0), 0);
 
   document.getElementById('hpName').textContent     = p.name;
@@ -28,7 +28,6 @@ async function openHistory(pid) {
   document.getElementById('hpDetails').textContent  = [p.age ? p.age + ' years old' : '', p.gender, p.phone].filter(Boolean).join(' · ');
   if (p.address) document.getElementById('hpDetails').textContent += ' · ' + p.address;
 
-  // ── Avatar ──
   const hpAv = document.getElementById('hpAv');
   if (p.photo) {
     hpAv.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
@@ -45,7 +44,6 @@ async function openHistory(pid) {
     hpAv.onmouseleave = () => hpAv.querySelector('.wpa-overlay').style.opacity = 0;
   }
 
-  // ── Stats ──
   document.getElementById('hpStats').innerHTML = `
     <div class="scard"><div class="sv" style="font-size:20px">${vis.length}</div><div class="sl">Visits</div></div>
     <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
@@ -56,7 +54,6 @@ async function openHistory(pid) {
   renderPatientVisits(vis);
   updateStorageBar(pid);
 
-  // ── "New Visit for this Patient" button ──
   let btn = document.getElementById('newVisitBtn');
   if (!btn) {
     btn = document.createElement('button');
@@ -71,9 +68,12 @@ async function openHistory(pid) {
 }
 
 // ── Medical History Notes ─────────────────
+// CHANGED: all reads/writes now go through Firestore.
 
 async function renderHistNotes() {
-  const notes = (await gHistNotes(historyPatientId)).sort((a, b) => b.date.localeCompare(a.date));
+  // CHANGED: gHistNotes() now queries Firestore
+  const notes = (await gHistNotes(historyPatientId))
+                  .sort((a, b) => b.date.localeCompare(a.date));
   const el    = document.getElementById('histNotes');
 
   if (!notes.length) {
@@ -115,6 +115,7 @@ function showAddHistNote() {
 }
 
 async function editHistNote(id) {
+  // CHANGED: read single note from Firestore via gHistNotes (query by patientId)
   const notes = await gHistNotes(historyPatientId);
   const n     = notes.find(x => x.id === id);
   if (!n) return;
@@ -131,37 +132,43 @@ async function saveHistNote() {
   const title = document.getElementById('hnTitle').value.trim();
   if (!title) { toast('Enter a title', 'danger'); return; }
 
-  const notes = await gHistNotes(historyPatientId);
-  const note  = {
-    id:       editingHistNoteId || 'hn_' + Date.now(),
-    date:     document.getElementById('hnDate').value,
-    category: document.getElementById('hnCat').value,
+  const note = {
+    id:         editingHistNoteId || 'hn_' + Date.now(),
+    patientId:  historyPatientId,   // CHANGED: required for Firestore query
+    date:       document.getElementById('hnDate').value,
+    category:   document.getElementById('hnCat').value,
     title,
-    details:  document.getElementById('hnDetails').value.trim()
+    details:    document.getElementById('hnDetails').value.trim(),
   };
 
-  if (editingHistNoteId) {
-    const i = notes.findIndex(x => x.id === editingHistNoteId);
-    if (i > -1) notes[i] = note;
-  } else {
-    notes.push(note);
+  try {
+    // CHANGED: setDoc to users/{uid}/histNotes/{note.id}
+    await FS.setDoc(userDoc('histNotes', note.id), note);
+    closeMo('histModal');
+    renderHistNotes();
+    toast('Note saved!');
+  } catch (err) {
+    console.error('saveHistNote error:', err);
+    toast('Error saving note', 'danger');
   }
-
-  await DB.set('ma_hist_' + historyPatientId, notes);
-  closeMo('histModal');
-  renderHistNotes();
-  toast('Note saved!');
 }
 
 async function delHistNote(id) {
   if (!confirm('Delete this note?')) return;
-  const notes = (await gHistNotes(historyPatientId)).filter(n => n.id !== id);
-  await DB.set('ma_hist_' + historyPatientId, notes);
-  renderHistNotes();
-  toast('Note deleted');
+  try {
+    // CHANGED: deleteDoc from Firestore
+    await FS.deleteDoc(userDoc('histNotes', id));
+    renderHistNotes();
+    toast('Note deleted');
+  } catch (err) {
+    console.error('delHistNote error:', err);
+    toast('Error deleting note', 'danger');
+  }
 }
 
 // ── Documents ─────────────────────────────
+// UNCHANGED — base64 blobs stay in IDB
+// (Firestore 1 MB doc limit prevents storing them there).
 
 async function handleDocUpload(input) {
   const files = Array.from(input.files);
@@ -178,18 +185,18 @@ async function handleDocUpload(input) {
       const r    = new FileReader();
       r.onload   = async e => {
         const currentDocs = await gDocs(historyPatientId);
-        await DB.set('ma_docs_' + historyPatientId, [...currentDocs, {
+        await IDB.set('ma_docs_' + historyPatientId, [...currentDocs, {
           id:         'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2),
           name:       file.name,
           type:       file.type,
           size:       file.size,
           data:       e.target.result,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date().toISOString(),
         }]);
         done++;
         resolve();
       };
-      r.onerror  = () => { done++; toast('Failed to read ' + file.name, 'danger'); resolve(); };
+      r.onerror = () => { done++; toast('Failed to read ' + file.name, 'danger'); resolve(); };
       r.readAsDataURL(file);
     });
   }
@@ -236,7 +243,7 @@ async function renderDocs() {
 async function delDoc(id) {
   if (!confirm('Delete this document?')) return;
   const docs = (await gDocs(historyPatientId)).filter(d => d.id !== id);
-  await DB.set('ma_docs_' + historyPatientId, docs);
+  await IDB.set('ma_docs_' + historyPatientId, docs);
   renderDocs();
   updateStorageBar(historyPatientId);
   toast('Deleted');
@@ -255,6 +262,7 @@ async function previewDoc(id) {
 }
 
 // ── Storage Bar ───────────────────────────
+// Unchanged — reports on browser quota (covers IDB docs).
 
 async function updateStorageBar(pid) {
   const el = document.getElementById('storageBar');
@@ -262,21 +270,21 @@ async function updateStorageBar(pid) {
 
   if (navigator.storage && navigator.storage.estimate) {
     const { usage, quota } = await navigator.storage.estimate();
-    const pct    = Math.min(100, Math.round((usage || 0) / (quota || 1) * 100));
-    const usedMB = ((usage || 0) / 1024 / 1024).toFixed(1);
+    const pct     = Math.min(100, Math.round((usage || 0) / (quota || 1) * 100));
+    const usedMB  = ((usage || 0) / 1024 / 1024).toFixed(1);
     const quotaMB = Math.round((quota || 0) / 1024 / 1024);
     document.getElementById('storPct').textContent = `${usedMB}MB of ~${quotaMB}MB used (${pct}%)`;
-    const fill        = document.getElementById('storFill');
-    fill.style.width  = pct + '%';
-    fill.className    = 'stor-fill' + (pct > 85 ? ' danger' : pct > 65 ? ' warn' : '');
+    const fill       = document.getElementById('storFill');
+    fill.style.width = pct + '%';
+    fill.className   = 'stor-fill' + (pct > 85 ? ' danger' : pct > 65 ? ' warn' : '');
   } else {
-    document.getElementById('storPct').textContent  = 'Storage: IndexedDB (large capacity)';
+    document.getElementById('storPct').textContent  = 'Firestore (cloud) + local docs cache';
     document.getElementById('storFill').style.width = '2%';
     document.getElementById('storFill').className   = 'stor-fill';
   }
 }
 
-// ── Visit list inside history page ────────
+// ── Visit list ────────────────────────────
 
 function renderPatientVisits(vis) {
   const el = document.getElementById('hpVisits');
@@ -312,18 +320,29 @@ function renderPatientVisits(vis) {
 
 async function deleteVisit(id) {
   if (!confirm('Delete this visit record?')) return;
-  const vis        = (await gVis()).filter(v => v.id !== id);
-  await DB.set('ma_visits', vis);
+  try {
+    // CHANGED: delete the visit document from Firestore
+    await FS.deleteDoc(userDoc('visits', id));
 
-  const updatedVis = vis.filter(v => v.patientId === historyPatientId).sort((a, b) => b.date.localeCompare(a.date));
-  renderPatientVisits(updatedVis);
+    // Optimistically update cache (onSnapshot will also confirm)
+    window._cache.visits = window._cache.visits.filter(v => v.id !== id);
 
-  const total = updatedVis.reduce((s, v) => s + (v.net || 0), 0);
-  document.getElementById('hpStats').innerHTML = `
-    <div class="scard"><div class="sv" style="font-size:20px">${updatedVis.length}</div><div class="sl">Visits</div></div>
-    <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
-    <div class="scard"><div class="sv" style="font-size:14px">${updatedVis[0] ? fmtDate(updatedVis[0].date) : '—'}</div><div class="sl">Last Visit</div></div>`;
-  toast('Visit deleted');
+    const updatedVis = window._cache.visits
+      .filter(v => v.patientId === historyPatientId)
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    renderPatientVisits(updatedVis);
+
+    const total = updatedVis.reduce((s, v) => s + (v.net || 0), 0);
+    document.getElementById('hpStats').innerHTML = `
+      <div class="scard"><div class="sv" style="font-size:20px">${updatedVis.length}</div><div class="sl">Visits</div></div>
+      <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
+      <div class="scard"><div class="sv" style="font-size:14px">${updatedVis[0] ? fmtDate(updatedVis[0].date) : '—'}</div><div class="sl">Last Visit</div></div>`;
+    toast('Visit deleted');
+  } catch (err) {
+    console.error('deleteVisit error:', err);
+    toast('Error deleting visit', 'danger');
+  }
 }
 
 // ── Patient photo upload ───────────────────
@@ -333,19 +352,22 @@ function handlePatientPhoto(input) {
   if (!file) return;
   const r   = new FileReader();
   r.onload  = async e => {
-    const pts = await gPts();
-    const p   = pts.find(x => x.id === historyPatientId);
-    if (!p) return;
-    p.photo = e.target.result;
-    await DB.set('ma_patients', pts);
-    const confirmedPts = await gPts();
-    const confirmedP   = confirmedPts.find(x => x.id === historyPatientId);
-    const hpAv         = document.getElementById('hpAv');
-    if (confirmedP && confirmedP.photo) {
-      hpAv.innerHTML = `<img src="${confirmedP.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    try {
+      // CHANGED: merge photo into Firestore patient document
+      await FS.setDoc(userDoc('patients', historyPatientId), { photo: e.target.result }, { merge: true });
+
+      // Update cache
+      const pt = window._cache.patients.find(x => x.id === historyPatientId);
+      if (pt) pt.photo = e.target.result;
+
+      document.getElementById('hpAv').innerHTML =
+        `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+      input.value = '';
+      toast('Photo updated!');
+    } catch (err) {
+      console.error('handlePatientPhoto error:', err);
+      toast('Error saving photo', 'danger');
     }
-    input.value = '';
-    toast('Photo updated!');
   };
   r.readAsDataURL(file);
 }
