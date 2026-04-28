@@ -1,8 +1,9 @@
 // ════════════════════════════════════════
 // settings.js — Settings Page
 // UI unchanged.
-// CHANGED: all DB.set() calls replaced with
-// Firestore setDoc/deleteDoc writes.
+// CHANGED: all FS.setDoc/deleteDoc calls
+//          replaced with Supabase upsert,
+//          update, and delete operations.
 // ════════════════════════════════════════
 
 async function renderSettings() {
@@ -52,8 +53,10 @@ function handleSettingsPhoto(input) {
     try {
       const s = await gSet();
       s.photo = e.target.result;
-      // CHANGED: write to Firestore
-      await FS.setDoc(userDoc('settings', 'profile'), s);
+      // CHANGED: upsert settings row in Supabase
+      const { error } = await SB.from('settings')
+        .upsert({ ...s, user_id: window._uid }, { onConflict: 'user_id' });
+      if (error) throw error;
       window._cache.settings = s;
       document.getElementById('settingsAvatar').innerHTML =
         `<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
@@ -75,8 +78,10 @@ function handleSettingsLogo(input) {
     try {
       const s = await gSet();
       s.logo  = e.target.result;
-      // CHANGED: write to Firestore
-      await FS.setDoc(userDoc('settings', 'profile'), s);
+      // CHANGED: upsert settings row in Supabase
+      const { error } = await SB.from('settings')
+        .upsert({ ...s, user_id: window._uid }, { onConflict: 'user_id' });
+      if (error) throw error;
       window._cache.settings = s;
       document.getElementById('settingsLogo').innerHTML =
         `<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
@@ -107,10 +112,13 @@ async function saveSettings() {
       logo:         cur.logo  || '',
     };
 
-    // CHANGED: write to Firestore, invalidate cache
-    await FS.setDoc(userDoc('settings', 'profile'), updated);
+    // CHANGED: upsert settings into Supabase (user_id is the PK)
+    const { error } = await SB.from('settings')
+      .upsert({ ...updated, user_id: window._uid }, { onConflict: 'user_id' });
+    if (error) throw error;
     window._cache.settings = updated;
 
+    // Sync welcome screen display fields
     document.getElementById('wDisplayName').textContent = updated.name    || 'Your Name';
     document.getElementById('wDisplayRank').textContent = updated.rank    || 'Rank / Designation';
     document.getElementById('wTagline').textContent     = updated.tagline || 'Your Mobile Medical Companion';
@@ -145,28 +153,33 @@ async function renderSvcSettings() {
     </tr>`).join('');
 }
 
-async function updSvc(id, field, value) {
+async function updSvc(svcId, field, value) {
   try {
-    const svcs = await gSvc();
-    const s    = svcs.find(x => x.id === id);
-    if (!s) return;
-    s[field] = value;
-    // CHANGED: write individual service doc to Firestore
-    await FS.setDoc(userDoc('services', String(id)), s);
-    // Update cache in-place (no need to reload full list)
-    const cached = window._cache.services.find(x => x.id === id);
+    // CHANGED: update the specific service row in Supabase
+    // Row pk is the composite string "${uid}_${svcId}"
+    const { error } = await SB.from('services')
+      .update({ [field]: value })
+      .eq('user_id', window._uid)
+      .eq('svc_id', svcId);
+    if (error) throw error;
+    // Update in-memory cache
+    const cached = window._cache.services.find(x => x.id === svcId);
     if (cached) cached[field] = value;
   } catch (err) {
     console.error('updSvc error:', err);
   }
 }
 
-async function delSvc(id) {
+async function delSvc(svcId) {
   if (!confirm('Remove this service?')) return;
   try {
-    // CHANGED: delete from Firestore
-    await FS.deleteDoc(userDoc('services', String(id)));
-    window._cache.services = window._cache.services.filter(s => s.id !== id);
+    // CHANGED: delete from Supabase services table
+    const { error } = await SB.from('services')
+      .delete()
+      .eq('user_id', window._uid)
+      .eq('svc_id', svcId);
+    if (error) throw error;
+    window._cache.services = window._cache.services.filter(s => s.id !== svcId);
     renderSvcSettings();
     toast('Removed');
   } catch (err) {
@@ -179,12 +192,22 @@ async function addSvc() {
   const n = document.getElementById('nSvcName').value.trim();
   if (!n) { toast('Enter a name', 'danger'); return; }
   try {
-    const svcs = await gSvc();
-    const nid  = Math.max(...svcs.map(s => s.id), 0) + 1;
-    const svc  = { id: nid, name: n, price: +(document.getElementById('nSvcPrice').value) || 0 };
-    // CHANGED: write to Firestore
-    await FS.setDoc(userDoc('services', String(nid)), svc);
-    window._cache.services.push(svc);
+    const svcs  = await gSvc();
+    const svcId = Math.max(...svcs.map(s => s.id), 0) + 1;
+    const price = +(document.getElementById('nSvcPrice').value) || 0;
+
+    // CHANGED: insert new service row into Supabase
+    const { error } = await SB.from('services')
+      .insert({
+        id:      `${window._uid}_${svcId}`,
+        user_id: window._uid,
+        svc_id:  svcId,
+        name:    n,
+        price,
+      });
+    if (error) throw error;
+
+    window._cache.services.push({ id: svcId, name: n, price });
     document.getElementById('nSvcName').value  = '';
     document.getElementById('nSvcPrice').value = '';
     renderSvcSettings();

@@ -262,18 +262,16 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .trash-btn:hover{background:#fee2e2;border-color:#f87171}
 .trash-btn svg{width:16px;height:16px;pointer-events:none}
 
-/* ── Login Screen ──────────────────────── */
-#loginScreen{position:fixed;inset:0;background:linear-gradient(145deg,#0d3b5c 0%,#0f4c75 40%,#1565a8 75%,#00b4d8 100%);display:none;align-items:center;justify-content:center;z-index:9000;padding:18px}
-.login-card{background:#fff;border-radius:var(--rxl);padding:32px 28px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.32);text-align:center;animation:wFadeIn .5s ease forwards}
-.login-logo{font-family:var(--fd);font-size:26px;color:var(--p);margin-bottom:4px}
-.login-logo em{color:var(--ac);font-style:normal}
-.login-sub{font-size:14px;color:var(--tx3);margin-bottom:28px}
-.login-divider{border:none;border-top:1px solid var(--bd);margin:18px 0}
-.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 18px;background:#fff;border:1.5px solid var(--bd2);border-radius:var(--rs);font-size:15px;font-weight:600;color:var(--tx);cursor:pointer;transition:box-shadow .18s,border-color .18s}
-.google-btn:hover{box-shadow:var(--shl);border-color:var(--pl)}
-.google-btn svg{flex-shrink:0}
-#loginError{font-size:13px;color:var(--err);margin-top:10px;min-height:18px}
-.login-note{font-size:12px;color:var(--tx3);margin-top:18px;line-height:1.6}
+/* ── Access Denied Screen ──────────────── */
+/* Shown only when no Supabase session exists.
+   No form, no inputs — admin-controlled access only. */
+#accessDenied{position:fixed;inset:0;background:linear-gradient(145deg,#0d3b5c 0%,#0f4c75 40%,#1565a8 75%,#00b4d8 100%);display:none;align-items:center;justify-content:center;z-index:9000;padding:18px}
+.ad-card{background:rgba(255,255,255,.97);border-radius:var(--rxl);padding:36px 32px;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.32);animation:wFadeIn .5s ease forwards}
+.ad-icon{font-size:40px;margin-bottom:12px}
+.ad-logo{font-family:var(--fd);font-size:22px;color:var(--p);margin-bottom:16px}
+.ad-logo em{color:var(--ac);font-style:normal}
+.ad-title{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:10px}
+.ad-msg{font-size:14px;color:var(--tx2);line-height:1.7}
 
 /* ── Toast ─────────────────────────────── */
 #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 20px;border-radius:30px;font-size:14px;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:opacity .28s;white-space:nowrap}

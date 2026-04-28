@@ -3,15 +3,14 @@
 // UI logic (tags, table, autocomplete,
 // form reset, calcTotal) unchanged.
 // CHANGED: saveVisit() now writes to
-// Firestore instead of IndexedDB arrays.
+//          Supabase instead of Firestore.
 // ════════════════════════════════════════
 
-// ── Shared state ─────────────────────────
-let selSvcs    = {};   // { serviceId: price }
+let selSvcs    = {};
 let activePtId = null;
 
 // ── Service tags & table ──────────────────
-// No changes below — purely UI logic.
+// No changes — reads from gSvc() cache.
 
 async function renderSvcTags() {
   const svcs = await gSvc();
@@ -63,16 +62,13 @@ function calcTotal() {
 }
 
 // ── Patient autocomplete ──────────────────
-// No changes — reads from gPts() which uses the cache.
 
 async function suggestPt() {
   const q  = document.getElementById('fName').value.toLowerCase().trim();
   const el = document.getElementById('ptSugg');
   if (q.length < 2) { el.style.display = 'none'; return; }
-
   const m = (await gPts()).filter(p => p.name.toLowerCase().includes(q)).slice(0, 5);
   if (!m.length) { el.style.display = 'none'; return; }
-
   el.style.display = 'block';
   el.innerHTML = m.map(p => `
     <div onclick="prefillPt('${p.id}')"
@@ -122,26 +118,25 @@ function resetForm() {
 // ── Save visit ────────────────────────────
 
 /**
- * CHANGED: saveVisit() now persists to Firestore.
- * Patient upsert → users/{uid}/patients/{pid}
- * Visit write   → users/{uid}/visits/{vid}
- * Both use setDoc (create-or-merge).
+ * CHANGED: Writes patient + visit to Supabase.
+ * Patient: upsert into `patients` table (preserves existing photo etc.)
+ * Visit:   insert into `visits` table.
  */
 async function saveVisit() {
   const name = document.getElementById('fName').value.trim();
-  if (!name)                          { toast('Patient name is required', 'danger'); return; }
-  if (!Object.keys(selSvcs).length)   { toast('Select at least one service', 'danger'); return; }
+  if (!name)                        { toast('Patient name is required', 'danger'); return; }
+  if (!Object.keys(selSvcs).length) { toast('Select at least one service', 'danger'); return; }
 
   try {
     const pts  = await gPts();
     const svcs = await gSvc();
+    const uid  = window._uid;
     let pt;
 
     if (activePtId) pt = pts.find(p => p.id === activePtId);
     if (!pt)        pt = pts.find(p => p.name.toLowerCase() === name.toLowerCase());
 
     if (!pt) {
-      // ── New patient ──
       pt = {
         id:        'p_' + Date.now(),
         name,
@@ -152,15 +147,16 @@ async function saveVisit() {
         createdAt:  new Date().toISOString(),
       };
     } else {
-      // ── Update existing patient fields ──
       pt.age     = +document.getElementById('fAge').value           || pt.age;
       pt.gender  =  document.getElementById('fGender').value        || pt.gender;
       pt.phone   =  document.getElementById('fPhone').value.trim()  || pt.phone;
       pt.address =  document.getElementById('fAddr').value.trim()   || pt.address;
     }
 
-    // CHANGED: write patient to Firestore (merge keeps existing photo etc.)
-    await FS.setDoc(userDoc('patients', pt.id), pt, { merge: true });
+    // CHANGED: upsert patient to Supabase (onConflict='id' to merge)
+    const { error: ptErr } = await SB.from('patients')
+      .upsert({ ...pt, user_id: uid }, { onConflict: 'id' });
+    if (ptErr) throw ptErr;
 
     const sub  = Object.values(selSvcs).reduce((a, b) => a + (+b || 0), 0);
     const disc = +(document.getElementById('fDisc').value || 0);
@@ -182,14 +178,16 @@ async function saveVisit() {
       createdAt:  new Date().toISOString(),
     };
 
-    // CHANGED: write visit to Firestore
-    await FS.setDoc(userDoc('visits', v.id), v);
+    // CHANGED: insert visit to Supabase
+    const { error: visErr } = await SB.from('visits')
+      .insert({ ...v, user_id: uid });
+    if (visErr) throw visErr;
 
-    // Optimistically update cache (onSnapshot will also confirm)
+    // Optimistically update cache (real-time channel will also confirm)
     const cachedPt = window._cache.patients.find(p => p.id === pt.id);
     if (cachedPt) Object.assign(cachedPt, pt);
-    else window._cache.patients.push(pt);
-    window._cache.visits.push(v);
+    else window._cache.patients.push({ ...pt, user_id: uid });
+    window._cache.visits.push({ ...v, user_id: uid });
 
     toast('Visit saved!');
     previewReceipt(v.id);

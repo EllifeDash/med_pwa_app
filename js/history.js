@@ -1,10 +1,10 @@
 // ════════════════════════════════════════
 // history.js — Patient History Page
-// UI and structure unchanged.
+// UI and rendering logic unchanged.
 // CHANGED sections marked with // CHANGED.
-// • History notes CRUD  → Firestore
-// • deleteVisit()       → Firestore
-// • handlePatientPhoto  → Firestore
+// • History notes CRUD  → Supabase
+// • deleteVisit()       → Supabase
+// • handlePatientPhoto  → Supabase
 // • Documents (base64)  → still IDB
 // ════════════════════════════════════════
 
@@ -68,13 +68,12 @@ async function openHistory(pid) {
 }
 
 // ── Medical History Notes ─────────────────
-// CHANGED: all reads/writes now go through Firestore.
+// CHANGED: gHistNotes() now queries Supabase.
 
 async function renderHistNotes() {
-  // CHANGED: gHistNotes() now queries Firestore
   const notes = (await gHistNotes(historyPatientId))
                   .sort((a, b) => b.date.localeCompare(a.date));
-  const el    = document.getElementById('histNotes');
+  const el = document.getElementById('histNotes');
 
   if (!notes.length) {
     el.innerHTML = `<div class="empty" style="padding:16px 0">
@@ -115,7 +114,6 @@ function showAddHistNote() {
 }
 
 async function editHistNote(id) {
-  // CHANGED: read single note from Firestore via gHistNotes (query by patientId)
   const notes = await gHistNotes(historyPatientId);
   const n     = notes.find(x => x.id === id);
   if (!n) return;
@@ -133,17 +131,19 @@ async function saveHistNote() {
   if (!title) { toast('Enter a title', 'danger'); return; }
 
   const note = {
-    id:         editingHistNoteId || 'hn_' + Date.now(),
-    patientId:  historyPatientId,   // CHANGED: required for Firestore query
-    date:       document.getElementById('hnDate').value,
-    category:   document.getElementById('hnCat').value,
+    id:        editingHistNoteId || 'hn_' + Date.now(),
+    patientId: historyPatientId,
+    date:      document.getElementById('hnDate').value,
+    category:  document.getElementById('hnCat').value,
     title,
-    details:    document.getElementById('hnDetails').value.trim(),
+    details:   document.getElementById('hnDetails').value.trim(),
   };
 
   try {
-    // CHANGED: setDoc to users/{uid}/histNotes/{note.id}
-    await FS.setDoc(userDoc('histNotes', note.id), note);
+    // CHANGED: upsert to Supabase hist_notes table
+    const { error } = await SB.from('hist_notes')
+      .upsert({ ...note, user_id: window._uid }, { onConflict: 'id' });
+    if (error) throw error;
     closeMo('histModal');
     renderHistNotes();
     toast('Note saved!');
@@ -156,8 +156,12 @@ async function saveHistNote() {
 async function delHistNote(id) {
   if (!confirm('Delete this note?')) return;
   try {
-    // CHANGED: deleteDoc from Firestore
-    await FS.deleteDoc(userDoc('histNotes', id));
+    // CHANGED: delete from Supabase
+    const { error } = await SB.from('hist_notes')
+      .delete()
+      .eq('user_id', window._uid)
+      .eq('id', id);
+    if (error) throw error;
     renderHistNotes();
     toast('Note deleted');
   } catch (err) {
@@ -167,23 +171,20 @@ async function delHistNote(id) {
 }
 
 // ── Documents ─────────────────────────────
-// UNCHANGED — base64 blobs stay in IDB
-// (Firestore 1 MB doc limit prevents storing them there).
+// UNCHANGED — base64 blobs stay in IDB.
 
 async function handleDocUpload(input) {
   const files = Array.from(input.files);
   if (!files.length) return;
-
   let done = 0;
   for (const file of files) {
     if (file.size > 10 * 1024 * 1024) {
       toast('File too large (max 10MB): ' + file.name, 'danger');
-      done++;
-      continue;
+      done++; continue;
     }
     await new Promise(resolve => {
-      const r    = new FileReader();
-      r.onload   = async e => {
+      const r  = new FileReader();
+      r.onload = async e => {
         const currentDocs = await gDocs(historyPatientId);
         await IDB.set('ma_docs_' + historyPatientId, [...currentDocs, {
           id:         'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2),
@@ -193,14 +194,12 @@ async function handleDocUpload(input) {
           data:       e.target.result,
           uploadedAt: new Date().toISOString(),
         }]);
-        done++;
-        resolve();
+        done++; resolve();
       };
       r.onerror = () => { done++; toast('Failed to read ' + file.name, 'danger'); resolve(); };
       r.readAsDataURL(file);
     });
   }
-
   renderDocs();
   updateStorageBar(historyPatientId);
   input.value = '';
@@ -210,7 +209,6 @@ async function handleDocUpload(input) {
 async function renderDocs() {
   const docs = await gDocs(historyPatientId);
   const el   = document.getElementById('docsList');
-
   if (!docs.length) {
     el.innerHTML = `<div class="empty" style="padding:12px 0">
       <p style="font-size:14px">No documents yet</p>
@@ -218,7 +216,6 @@ async function renderDocs() {
     </div>`;
     return;
   }
-
   el.innerHTML = docs.map(d => {
     const isImg = d.type.startsWith('image/');
     const icon  = isImg
@@ -231,7 +228,7 @@ async function renderDocs() {
       <div class="doc-icon">${icon}</div>
       <div class="doc-info">
         <div class="doc-name">${d.name}</div>
-        <div class="doc-meta">${fmtFileSize(d.size)} · ${fmtDate(d.uploadedAt?.slice(0, 10) || '')}</div>
+        <div class="doc-meta">${fmtFileSize(d.size)} · ${fmtDate(d.uploadedAt?.slice(0,10)||'')}</div>
       </div>
       <button class="btn bg bsm" style="flex-shrink:0;padding:5px 10px;font-size:12px"
               onclick="previewDoc('${d.id}')">View</button>
@@ -262,25 +259,22 @@ async function previewDoc(id) {
 }
 
 // ── Storage Bar ───────────────────────────
-// Unchanged — reports on browser quota (covers IDB docs).
 
 async function updateStorageBar(pid) {
   const el = document.getElementById('storageBar');
   el.style.display = 'block';
-
   if (navigator.storage && navigator.storage.estimate) {
     const { usage, quota } = await navigator.storage.estimate();
-    const pct     = Math.min(100, Math.round((usage || 0) / (quota || 1) * 100));
-    const usedMB  = ((usage || 0) / 1024 / 1024).toFixed(1);
-    const quotaMB = Math.round((quota || 0) / 1024 / 1024);
+    const pct     = Math.min(100, Math.round((usage||0)/(quota||1)*100));
+    const usedMB  = ((usage||0)/1024/1024).toFixed(1);
+    const quotaMB = Math.round((quota||0)/1024/1024);
     document.getElementById('storPct').textContent = `${usedMB}MB of ~${quotaMB}MB used (${pct}%)`;
     const fill       = document.getElementById('storFill');
     fill.style.width = pct + '%';
     fill.className   = 'stor-fill' + (pct > 85 ? ' danger' : pct > 65 ? ' warn' : '');
   } else {
-    document.getElementById('storPct').textContent  = 'Firestore (cloud) + local docs cache';
+    document.getElementById('storPct').textContent  = 'Supabase (cloud) + local docs cache';
     document.getElementById('storFill').style.width = '2%';
-    document.getElementById('storFill').className   = 'stor-fill';
   }
 }
 
@@ -294,7 +288,6 @@ function renderPatientVisits(vis) {
     </div>`;
     return;
   }
-
   el.innerHTML = vis.map(v => `
     <div class="hi">
       <div class="flex ic jb">
@@ -314,17 +307,20 @@ function renderPatientVisits(vis) {
       </div>
       <div class="hs">${v.services.map(s => s.name).join(', ')}</div>
       ${v.notes ? `<div class="hn">${v.notes}</div>` : ''}
-      <div class="ha">Rs. ${(v.net || 0).toLocaleString()}</div>
+      <div class="ha">Rs. ${(v.net||0).toLocaleString()}</div>
     </div>`).join('');
 }
 
 async function deleteVisit(id) {
   if (!confirm('Delete this visit record?')) return;
   try {
-    // CHANGED: delete the visit document from Firestore
-    await FS.deleteDoc(userDoc('visits', id));
+    // CHANGED: delete visit row from Supabase
+    const { error } = await SB.from('visits')
+      .delete()
+      .eq('user_id', window._uid)
+      .eq('id', id);
+    if (error) throw error;
 
-    // Optimistically update cache (onSnapshot will also confirm)
     window._cache.visits = window._cache.visits.filter(v => v.id !== id);
 
     const updatedVis = window._cache.visits
@@ -333,11 +329,11 @@ async function deleteVisit(id) {
 
     renderPatientVisits(updatedVis);
 
-    const total = updatedVis.reduce((s, v) => s + (v.net || 0), 0);
+    const total = updatedVis.reduce((s, v) => s + (v.net||0), 0);
     document.getElementById('hpStats').innerHTML = `
       <div class="scard"><div class="sv" style="font-size:20px">${updatedVis.length}</div><div class="sl">Visits</div></div>
       <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
-      <div class="scard"><div class="sv" style="font-size:14px">${updatedVis[0] ? fmtDate(updatedVis[0].date) : '—'}</div><div class="sl">Last Visit</div></div>`;
+      <div class="scard"><div class="sv" style="font-size:14px">${updatedVis[0]?fmtDate(updatedVis[0].date):'—'}</div><div class="sl">Last Visit</div></div>`;
     toast('Visit deleted');
   } catch (err) {
     console.error('deleteVisit error:', err);
@@ -353,10 +349,13 @@ function handlePatientPhoto(input) {
   const r   = new FileReader();
   r.onload  = async e => {
     try {
-      // CHANGED: merge photo into Firestore patient document
-      await FS.setDoc(userDoc('patients', historyPatientId), { photo: e.target.result }, { merge: true });
+      // CHANGED: update patient row in Supabase with new photo
+      const { error } = await SB.from('patients')
+        .update({ photo: e.target.result })
+        .eq('user_id', window._uid)
+        .eq('id', historyPatientId);
+      if (error) throw error;
 
-      // Update cache
       const pt = window._cache.patients.find(x => x.id === historyPatientId);
       if (pt) pt.photo = e.target.result;
 
