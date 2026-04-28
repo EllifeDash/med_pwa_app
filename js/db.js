@@ -1,18 +1,19 @@
 // ════════════════════════════════════════
-// db.js — Firestore Data Layer
-// Replaces the old IndexedDB-based DB object.
-// • All structured data → Firestore
-// • Binary documents (base64) → IndexedDB
-//   (Firestore 1MB doc limit makes base64
-//    files unsuitable for direct storage)
+// db.js — Supabase Data Layer
+// Replaces Firestore entirely.
+//
+// Data model (Supabase PostgreSQL tables):
+//   patients  — id TEXT pk, user_id UUID, name, age, gender, phone, address, photo, createdAt
+//   visits    — id TEXT pk, user_id UUID, patientId, patientName, date, time, notes,
+//               services JSONB, subtotal, discount, net, createdAt
+//   services  — id TEXT pk ("${uid}_${svcId}"), user_id UUID, svc_id INT, name, price
+//   hist_notes— id TEXT pk, user_id UUID, patientId, date, category, title, details
+//   settings  — user_id UUID pk, name, rank, businessName, tagline, phone, address, photo, logo
+//
+// Binary documents (base64) stay in IndexedDB (too large for DB rows).
 // ════════════════════════════════════════
 
-// ── Destructure window globals set by firebase.js ─
-// (firebase.js is type="module" and runs before
-//  this deferred script per HTML spec order)
-const { collection, doc, getDoc, getDocs, setDoc,
-        deleteDoc, query, where, onSnapshot, writeBatch } = window.FS;
-const db = window.db;
+const SB = window.SB; // set by supabase.js (type=module, runs first)
 
 // ── Default seed data ─────────────────────
 const DEFAULT_SVC = [
@@ -35,104 +36,165 @@ const DEFAULT_SET = {
 };
 
 // ── In-memory cache ───────────────────────
-// Populated by onSnapshot listeners and one-shot reads.
-// Direct mutations allowed for immediate (optimistic) UI
-// updates before the server round-trip confirms.
 window._cache = { patients: [], visits: [], services: [], settings: null };
 
-// ── Real-time listener handles ────────────
-let _listeners = [];
+// ── Real-time channel handles ─────────────
+let _channels = [];
 
 /**
- * Set up onSnapshot listeners for patients + visits.
- * Called once after the user authenticates.
+ * Set up Supabase real-time subscriptions for patients + visits.
+ * Called once after the user authenticates (from init.js → bootApp).
+ * Requires: Supabase Dashboard → Database → Replication → enable tables.
  */
 function setupListeners() {
-  clearListeners(); // tear down any previous session's listeners
+  clearListeners();
+  const uid = window._uid;
 
-  // ── Patients listener ──
-  _listeners.push(
-    onSnapshot(userCol('patients'), snap => {
-      window._cache.patients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // ── Patients channel ──
+  const patCh = SB.channel('patients_' + uid)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'patients',
+      filter: `user_id=eq.${uid}`,
+    }, payload => {
+      _applyChange(window._cache.patients, payload);
       if (document.getElementById('pg-patients')?.style.display !== 'none')
         if (typeof renderPatients === 'function') renderPatients();
-    }, err => console.error('patients snapshot error:', err))
-  );
+    })
+    .subscribe();
 
-  // ── Visits listener ──
-  _listeners.push(
-    onSnapshot(userCol('visits'), snap => {
-      window._cache.visits = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // ── Visits channel ──
+  const visCh = SB.channel('visits_' + uid)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'visits',
+      filter: `user_id=eq.${uid}`,
+    }, payload => {
+      _applyChange(window._cache.visits, payload);
       if (document.getElementById('pg-dashboard')?.style.display !== 'none')
         if (typeof renderDash === 'function') renderDash();
-    }, err => console.error('visits snapshot error:', err))
-  );
+    })
+    .subscribe();
+
+  _channels = [patCh, visCh];
+}
+
+/** Apply a real-time payload to a cache array in-place. */
+function _applyChange(arr, payload) {
+  if (payload.eventType === 'INSERT') {
+    if (!arr.find(x => x.id === payload.new.id)) arr.push(payload.new);
+  } else if (payload.eventType === 'UPDATE') {
+    const i = arr.findIndex(x => x.id === payload.new.id);
+    if (i > -1) arr[i] = payload.new; else arr.push(payload.new);
+  } else if (payload.eventType === 'DELETE') {
+    const i = arr.findIndex(x => x.id === payload.old.id);
+    if (i > -1) arr.splice(i, 1);
+  }
 }
 
 /**
- * Tear down all real-time listeners and wipe the cache.
+ * Tear down all real-time subscriptions and wipe the cache.
  * Called on sign-out.
  */
 function clearListeners() {
-  _listeners.forEach(unsub => unsub());
-  _listeners = [];
+  _channels.forEach(ch => SB.removeChannel(ch));
+  _channels = [];
   window._cache = { patients: [], visits: [], services: [], settings: null };
 }
 
 // ── Data accessors ────────────────────────
-// Same function signatures as before — now backed by Firestore.
+// Same function signatures used across the app — now backed by Supabase.
 
+/** Fetch user settings. Falls back to defaults for new users. */
 async function gSet() {
   if (window._cache.settings) return window._cache.settings;
-  const snap = await getDoc(userDoc('settings', 'profile'));
-  window._cache.settings = snap.exists() ? snap.data() : { ...DEFAULT_SET };
+  const { data } = await SB.from('settings')
+    .select('*')
+    .eq('user_id', window._uid)
+    .maybeSingle();
+  window._cache.settings = data ? _stripMeta(data) : { ...DEFAULT_SET };
   return window._cache.settings;
 }
 
+/** Fetch all patients for the current user. */
 async function gPts() {
   if (window._cache.patients.length) return window._cache.patients;
-  const snap = await getDocs(userCol('patients'));
-  window._cache.patients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await SB.from('patients')
+    .select('*')
+    .eq('user_id', window._uid);
+  if (error) { console.error('gPts:', error); return []; }
+  window._cache.patients = data || [];
   return window._cache.patients;
 }
 
+/** Fetch all visits for the current user. */
 async function gVis() {
   if (window._cache.visits.length) return window._cache.visits;
-  const snap = await getDocs(userCol('visits'));
-  window._cache.visits = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await SB.from('visits')
+    .select('*')
+    .eq('user_id', window._uid);
+  if (error) { console.error('gVis:', error); return []; }
+  window._cache.visits = data || [];
   return window._cache.visits;
 }
 
+/**
+ * Fetch services. Seeds DEFAULT_SVC for new users.
+ * Services use a composite string pk: "${uid}_${numericId}"
+ * to handle multiple users sharing the same numeric ids.
+ * On return, rows are mapped to { id: numericId, name, price }
+ * so all existing app logic (s.id) remains unchanged.
+ */
 async function gSvc() {
   if (window._cache.services.length) return window._cache.services;
-  const snap = await getDocs(userCol('services'));
-  if (snap.empty) {
-    // First-time user: seed default services in a single batch write
-    const batch = writeBatch(db);
-    DEFAULT_SVC.forEach(s => batch.set(userDoc('services', String(s.id)), s));
-    await batch.commit();
-    window._cache.services = [...DEFAULT_SVC];
+  const { data, error } = await SB.from('services')
+    .select('*')
+    .eq('user_id', window._uid);
+  if (error) { console.error('gSvc:', error); return []; }
+
+  if (!data || data.length === 0) {
+    // First login — seed default services
+    const rows = DEFAULT_SVC.map(s => ({
+      id:      `${window._uid}_${s.id}`,
+      user_id: window._uid,
+      svc_id:  s.id,
+      name:    s.name,
+      price:   s.price,
+    }));
+    const { error: seedErr } = await SB.from('services').insert(rows);
+    if (seedErr) console.error('gSvc seed:', seedErr);
+    window._cache.services = [...DEFAULT_SVC]; // already in { id, name, price } format
   } else {
-    window._cache.services = snap.docs.map(d => d.data());
+    // Map DB rows → app format: replace composite id with numeric svc_id
+    window._cache.services = data.map(s => ({ id: s.svc_id, name: s.name, price: s.price }));
   }
   return window._cache.services;
 }
 
+/** Fetch history notes for a specific patient. */
 async function gHistNotes(pid) {
-  const snap = await getDocs(
-    query(userCol('histNotes'), where('patientId', '==', pid))
-  );
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await SB.from('hist_notes')
+    .select('*')
+    .eq('user_id', window._uid)
+    .eq('patientId', pid);
+  if (error) { console.error('gHistNotes:', error); return []; }
+  return data || [];
 }
 
-// Documents stay in IndexedDB — base64 blobs can exceed Firestore's 1MB limit.
+/** Fetch documents for a patient — stored locally in IndexedDB (base64 safe). */
 async function gDocs(pid) {
   return (await IDB.get('ma_docs_' + pid)) || [];
+}
+
+/** Remove Supabase-internal fields (user_id, svc_id) before returning to app. */
+function _stripMeta(obj) {
+  const { user_id, svc_id, ...rest } = obj;
+  return rest;
 }
 
 // ════════════════════════════════════════
 // IDB — Minimal IndexedDB wrapper
 // Used ONLY for binary/base64 documents.
+// (Supabase rows should stay under 1MB;
+//  base64 images easily exceed that.)
 // ════════════════════════════════════════
 const IDB = (() => {
   const NAME = 'mediassist_docs', VER = 1, STORE = 'kv';

@@ -1,15 +1,11 @@
 // ════════════════════════════════════════
 // patients.js — Patients Page
-// UI logic unchanged. Only deletePatient()
-// is modified — now deletes from Firestore
-// instead of patching IndexedDB arrays.
+// Rendering logic unchanged.
+// CHANGED: deletePatient() now uses
+//          Supabase deletes instead of
+//          Firestore batch operations.
 // ════════════════════════════════════════
 
-/**
- * Render (or re-render) the patient list.
- * Data comes from window._cache.patients (populated by onSnapshot in db.js).
- * No change to rendering logic.
- */
 async function renderPatients() {
   const q   = (document.getElementById('pSearch')?.value || '').toLowerCase();
   let pts   = await gPts();
@@ -74,37 +70,39 @@ async function renderPatients() {
 }
 
 /**
- * CHANGED: Delete patient + cascade via Firestore batch.
- * Removes: patient doc, all visit docs, all histNote docs.
- * Documents (base64) stay in IDB — cleared separately.
+ * CHANGED: Delete patient + cascade using Supabase.
+ * Removes: patient row, all visit rows, all hist_note rows.
+ * Documents (base64) are cleared from IndexedDB separately.
  */
 async function deletePatient(id) {
   if (!confirm('Delete this patient and ALL their visits, history notes, and documents? This cannot be undone.')) return;
 
   try {
-    const batch = FS.writeBatch(window.db);
+    // Delete all hist_notes for this patient
+    const { error: notesErr } = await SB.from('hist_notes')
+      .delete()
+      .eq('user_id', window._uid)
+      .eq('patientId', id);
+    if (notesErr) throw notesErr;
 
-    // Delete patient document
-    batch.delete(userDoc('patients', id));
+    // Delete all visits for this patient
+    const { error: visErr } = await SB.from('visits')
+      .delete()
+      .eq('user_id', window._uid)
+      .eq('patientId', id);
+    if (visErr) throw visErr;
 
-    // Delete all visits belonging to this patient
-    const visSnap = await FS.getDocs(
-      FS.query(userCol('visits'), FS.where('patientId', '==', id))
-    );
-    visSnap.forEach(d => batch.delete(d.ref));
+    // Delete the patient row
+    const { error: ptErr } = await SB.from('patients')
+      .delete()
+      .eq('user_id', window._uid)
+      .eq('id', id);
+    if (ptErr) throw ptErr;
 
-    // Delete all history notes belonging to this patient
-    const notesSnap = await FS.getDocs(
-      FS.query(userCol('histNotes'), FS.where('patientId', '==', id))
-    );
-    notesSnap.forEach(d => batch.delete(d.ref));
-
-    await batch.commit();
-
-    // Clear documents from IDB (base64 blobs stored locally)
+    // Clear documents from IDB
     await IDB.set('ma_docs_' + id, []);
 
-    // Optimistically update cache (onSnapshot will also fire)
+    // Optimistically update cache (real-time channel will also confirm)
     window._cache.patients = window._cache.patients.filter(p => p.id !== id);
     window._cache.visits   = window._cache.visits.filter(v => v.patientId !== id);
 

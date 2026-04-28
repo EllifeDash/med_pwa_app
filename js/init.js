@@ -1,30 +1,28 @@
 // ════════════════════════════════════════
 // init.js — App Bootstrap & Welcome Screen
-// Auth state is now driven by firebase.js.
-// This file provides: bootApp(), showLoginScreen(),
-// welcome-screen helpers, and auth actions.
+// CHANGED: login/signup handlers removed.
+// • bootApp()        — unchanged
+// • enterApp()       — unchanged
+// • logout()         — unchanged
+// • showAccessDenied() — replaces showLoginScreen()
+//   Shows a minimal "contact admin" screen,
+//   no form, no inputs, no auth UI.
 // ════════════════════════════════════════
 
-// ── Called by firebase.js onAuthStateChanged ─
 /**
- * Runs once after Firebase confirms the user is signed in.
- * Loads settings, seeds services, populates the welcome screen.
- * @param {firebase.User} user
+ * Called by supabase.js after a valid session is confirmed.
+ * Loads profile from Supabase and populates the welcome screen.
  */
 async function bootApp(user) {
-  // Set up Firestore real-time listeners for this user's data
-  setupListeners();
+  setupListeners();       // start real-time subscriptions (db.js)
 
-  // Load settings (falls back to defaults for new users)
-  const s = await gSet();
+  const s = await gSet(); // load settings from Supabase
+  await gSvc();           // seed default services if first login
 
-  // Ensure services exist (gSvc seeds defaults if first login)
-  await gSvc();
-
-  // ── Populate welcome screen ──
-  document.getElementById('wTagline').textContent     = s.tagline || 'Your Mobile Medical Companion';
-  document.getElementById('wDisplayName').textContent = s.name    || user.displayName || 'Your Name';
+  // ── Populate welcome screen with Supabase profile data ──
+  document.getElementById('wDisplayName').textContent = s.name    || 'Your Name';
   document.getElementById('wDisplayRank').textContent = s.rank    || 'Rank / Designation';
+  document.getElementById('wTagline').textContent     = s.tagline || 'Your Mobile Medical Companion';
 
   if (s.logo) {
     document.getElementById('wLogoWrap').innerHTML =
@@ -35,34 +33,38 @@ async function bootApp(user) {
       `<img src="${s.photo}" class="wsubject-img"/>`;
   }
 
-  document.getElementById('iName').value = s.name || user.displayName || '';
+  // Keep hidden inputs in sync (used by settings page)
+  document.getElementById('iName').value = s.name || '';
   document.getElementById('iRank').value = s.rank || '';
-  updateWelcomeInitials();
 
   // Pre-fill today's date/time on the Add Visit form
   const now = new Date();
   document.getElementById('fDate').valueAsDate = now;
   document.getElementById('fTime').value       = now.toTimeString().slice(0, 5);
 
-  // Hide login screen, reveal welcome screen
-  document.getElementById('loginScreen').style.display = 'none';
+  // Hide access-denied fallback, show welcome screen
+  document.getElementById('accessDenied').style.display = 'none';
   document.getElementById('ws').classList.add('active');
-  document.getElementById('wsSpinner').style.display = 'none';
+  document.getElementById('wsSpinner').style.display    = 'none';
   document.getElementById('wsCard').classList.add('wcard-ready');
 }
 
 /**
- * Called by firebase.js when the user is not authenticated.
+ * CHANGED: Called when no valid session exists.
+ * Shows a minimal locked-screen — no login form, no inputs.
+ * Users must contact admin to get access.
  */
-function showLoginScreen() {
-  document.getElementById('loginScreen').style.display = 'flex';
+function showAccessDenied() {
+  document.getElementById('accessDenied').style.display = 'flex';
   document.getElementById('ws').classList.remove('active');
   document.getElementById('app').classList.remove('active');
 }
 
-// Expose to window so firebase.js (module) can call them
-window.bootApp       = bootApp;
-window.showLoginScreen = showLoginScreen;
+// Expose to window so supabase.js (module) can call them
+window.bootApp          = bootApp;
+window.showAccessDenied = showAccessDenied;
+// Keep old name as alias — defensive, in case anything references it
+window.showLoginScreen  = showAccessDenied;
 
 // ── Welcome screen helpers ─────────────────
 
@@ -71,60 +73,28 @@ function getInits(name) {
   return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function updateWelcomeInitials() {
-  const n  = document.getElementById('iName').value;
-  const el = document.getElementById('wInitials');
-  if (el && el.tagName !== 'IMG') el.textContent = getInits(n);
-}
-
 function setWelcomePhoto(b64) {
   const wrap = document.getElementById('wSubjectWrap');
   if (wrap) wrap.innerHTML = `<img src="${b64}" class="wsubject-img"/>`;
 }
 
-function handleWelcomePhoto(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const r  = new FileReader();
-  r.onload = async e => {
-    const b64 = e.target.result;
-    setWelcomePhoto(b64);
-    // CHANGED: persist to Firestore instead of IndexedDB
-    const s = await gSet();
-    s.photo = b64;
-    await FS.setDoc(userDoc('settings', 'profile'), s);
-    window._cache.settings = s;
-  };
-  r.readAsDataURL(file);
-}
-
-// ── Auth actions ───────────────────────────
+// ── App entry ──────────────────────────────
 
 /**
- * Persist the profile name/rank from the welcome screen inputs.
- * CHANGED: writes to Firestore instead of IndexedDB.
+ * "Enter App" button on the welcome screen.
+ * Navigates to the main app — no auth needed here,
+ * session was already confirmed by bootApp().
  */
-async function saveProfile() {
-  const s    = await gSet();
-  s.name     = document.getElementById('iName').value.trim() || s.name;
-  s.rank     = document.getElementById('iRank').value.trim() || s.rank;
-  await FS.setDoc(userDoc('settings', 'profile'), s);
-  window._cache.settings = s;
-  toast('Profile saved!');
-}
-
-/** Enter the main app (called by "Enter App" button on welcome screen). */
-async function enterApp() {
-  await saveProfile();
+function enterApp() {
   document.getElementById('ws').style.display = 'none';
   document.getElementById('app').classList.add('active');
   go('dashboard', null);
 }
 
 /**
- * Sign the user out via Firebase Auth.
- * CHANGED: now calls authSignOut() (Firebase signOut) instead of just hiding screens.
+ * Logout — signs out via Supabase, triggers showAccessDenied().
+ * Admin must restore access manually from the Supabase dashboard.
  */
 function logout() {
-  authSignOut(); // defined in firebase.js → triggers onAuthStateChanged → showLoginScreen()
+  authSignOut(); // defined in supabase.js
 }
