@@ -439,12 +439,8 @@
     </div>
   </nav>
 
-  <!-- FAB — context-aware floating action button (mobile only) -->
-  <button id="fab" aria-label="New Visit" onclick="go('addVisit',null)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-  </button>
+  <!-- Swipe-back gesture indicator bar -->
+  <div id="swipe-indicator"></div>
 
 </div><!-- /#app -->
 
@@ -559,13 +555,15 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- ══════════════════════════════════════
-     MICRO-INTERACTIONS
-     Ripple effect + FAB visibility +
-     Toast animation + touch feedback.
-     Pure vanilla JS, no dependencies.
+     MICRO-INTERACTIONS & GESTURES
+     • Ripple on interactive elements
+     • Smooth toast animation
+     • Touch press feedback on cards
+     • Android-style swipe-back gesture
+     Pure vanilla JS. No dependencies.
 ══════════════════════════════════════ -->
 <script>
-// ── Ripple on all .btn and .stag elements ──
+// ── Ripple on buttons, tags, pills, nav ──
 document.addEventListener('pointerdown', function(e) {
   const el = e.target.closest('.btn, .stag, .dpill, .nbtn, .bb');
   if (!el) return;
@@ -575,31 +573,10 @@ document.addEventListener('pointerdown', function(e) {
   const size = Math.max(rect.width, rect.height) * 2;
   r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
   el.appendChild(r);
-  r.addEventListener('animationend', () => r.remove());
+  r.addEventListener('animationend', () => r.remove(), { once: true });
 }, { passive: true });
 
-// ── FAB context-aware visibility ──
-// Show FAB on dashboard and patients pages; hide on addVisit (its purpose IS add visit)
-function updateFab() {
-  const fab = document.getElementById('fab');
-  if (!fab) return;
-  const visible = ['pg-dashboard','pg-patients'].some(id => {
-    const el = document.getElementById(id);
-    return el && el.style.display !== 'none';
-  });
-  fab.classList.toggle('visible', visible);
-}
-// Hook into the existing go() function without overwriting it
-const _originalGo = window.go;
-window.go = function(pg, btn) {
-  if (_originalGo) _originalGo(pg, btn);
-  requestAnimationFrame(updateFab);
-};
-// Run once on load
-window.addEventListener('load', () => requestAnimationFrame(updateFab));
-
-// ── Toast: use CSS class for smooth slide-in ──
-// Patch the existing toast() in utils.js to use the new animation
+// ── Toast: smooth slide-up animation ──
 const _origToast = window.toast;
 let _toastTimer2;
 window.toast = function(msg, type) {
@@ -607,20 +584,102 @@ window.toast = function(msg, type) {
   if (!el) { if (_origToast) _origToast(msg, type); return; }
   el.textContent = msg;
   el.style.background = type === 'danger' ? '#ef4444' : '#1a2332';
+  el.classList.remove('show');
+  void el.offsetWidth; // force reflow so re-trigger works
   el.classList.add('show');
   clearTimeout(_toastTimer2);
   _toastTimer2 = setTimeout(() => el.classList.remove('show'), 2600);
 };
 
-// ── Touch press state for patient cards ──
-// Adds tactile .pressed class on touch so CSS can react
-document.addEventListener('touchstart', function(e) {
+// ── Touch press feedback on patient cards ──
+document.addEventListener('touchstart', e => {
   const el = e.target.closest('.pc');
   if (el) el.classList.add('pressed');
 }, { passive: true });
-document.addEventListener('touchend', function(e) {
-  document.querySelectorAll('.pc.pressed').forEach(el => el.classList.remove('pressed'));
-}, { passive: true });
+['touchend','touchcancel'].forEach(ev =>
+  document.addEventListener(ev, () =>
+    document.querySelectorAll('.pc.pressed').forEach(el => el.classList.remove('pressed'))
+  , { passive: true })
+);
+
+// ── Android-style Swipe-to-Go-Back gesture ──
+// Tracks a page history stack. A right-swipe starting within
+// 30px of the left edge navigates back one level.
+// A thin indicator line gives visual feedback during the drag.
+(function() {
+  // Page history stack — populated by patching window.go
+  const _pageStack = [];
+  // Map of page → its natural "back" destination
+  const _backMap = {
+    'history'   : 'patients',
+    'addVisit'  : 'dashboard',
+    'patients'  : 'dashboard',
+    'settings'  : 'dashboard',
+  };
+
+  // Patch go() to maintain history stack
+  const _origGo = window.go;
+  window.go = function(pg, btn) {
+    if (_origGo) _origGo(pg, btn);
+    // Push to stack (don't duplicate consecutive same-page entries)
+    if (_pageStack[_pageStack.length - 1] !== pg) _pageStack.push(pg);
+    // Keep stack bounded
+    if (_pageStack.length > 20) _pageStack.shift();
+  };
+
+  // Navigate back: pop stack or use backMap fallback
+  function goBack() {
+    if (_pageStack.length > 1) {
+      _pageStack.pop(); // remove current
+      const prev = _pageStack[_pageStack.length - 1];
+      if (window._origGo) window._origGo(prev, null);
+      else if (_origGo)   _origGo(prev, null);
+    } else {
+      const cur = _pageStack[0];
+      const dest = _backMap[cur] || 'dashboard';
+      if (_origGo) _origGo(dest, null);
+    }
+  }
+
+  // Swipe state
+  let _tx = 0, _ty = 0, _active = false;
+  const EDGE_ZONE  = 30;   // px from left edge to start
+  const MIN_SWIPE  = 80;   // px horizontal travel to trigger back
+  const MAX_VERT   = 60;   // px vertical drift allowed
+  const indicator  = document.getElementById('swipe-indicator');
+
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    _tx = t.clientX;
+    _ty = t.clientY;
+    _active = _tx <= EDGE_ZONE;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!_active) return;
+    const t = e.touches[0];
+    const dx = t.clientX - _tx;
+    const dy = Math.abs(t.clientY - _ty);
+    if (dy > MAX_VERT) { _active = false; if (indicator) indicator.classList.remove('visible'); return; }
+    if (dx > 0 && indicator) indicator.classList.add('visible');
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!indicator) { _active = false; return; }
+    indicator.classList.remove('visible');
+    if (!_active) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - _tx;
+    const dy = Math.abs(t.clientY - _ty);
+    _active = false;
+    if (dx >= MIN_SWIPE && dy <= MAX_VERT) goBack();
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    _active = false;
+    if (indicator) indicator.classList.remove('visible');
+  }, { passive: true });
+})();
 </script>
 
 </body>
