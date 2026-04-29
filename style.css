@@ -26,7 +26,6 @@
   --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(15,76,117,.08);
   --shm:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(15,76,117,.10);
   --shl:0 4px 16px rgba(0,0,0,.08),0 16px 48px rgba(15,76,117,.14);
-  --shfab:0 6px 20px rgba(15,76,117,.35),0 2px 6px rgba(0,0,0,.2);
   /* Type */
   --fn:'Plus Jakarta Sans',sans-serif;
   --fd:'Playfair Display',serif;
@@ -92,44 +91,33 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .bottomnav{
   display:none;position:fixed;bottom:0;left:0;right:0;
   background:var(--sur);
-  border-top:none;
-  box-shadow:0 -2px 16px rgba(0,0,0,.08);
+  border-top:1px solid var(--bd);
+  box-shadow:0 -1px 8px rgba(0,0,0,.06);
   z-index:200;
-  padding:0 8px env(safe-area-inset-bottom,0);
-  height:calc(64px + env(safe-area-inset-bottom,0));
+  padding:0 4px env(safe-area-inset-bottom,0);
+  height:calc(60px + env(safe-area-inset-bottom,0));
 }
 .bni{
   display:flex;justify-content:space-around;align-items:center;
-  height:64px;position:relative;
+  height:60px;
 }
 .bb{
   flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;
-  background:none;border:none;font-family:var(--fn);font-size:10px;
-  font-weight:600;color:var(--tx3);padding:6px 4px;cursor:pointer;
-  letter-spacing:.02em;text-transform:uppercase;
-  position:relative;overflow:hidden;border-radius:12px;
-  transition:color var(--dur) var(--ease);
+  justify-content:center;gap:4px;
+  background:none;border:none;font-family:var(--fn);font-size:11px;
+  font-weight:500;color:var(--tx3);padding:6px 2px;cursor:pointer;
+  border-radius:10px;
+  transition:color var(--dur) var(--ease),background 150ms;
+  -webkit-tap-highlight-color:transparent;
   min-width:0;
 }
-.bb svg{width:22px;height:22px;transition:transform var(--dur) var(--ease)}
-/* Active pill — slides under the active tab */
-.bb::before{
-  content:'';position:absolute;top:6px;left:50%;
-  transform:translateX(-50%) scaleX(0);
-  width:40px;height:30px;border-radius:20px;
-  background:rgba(15,76,117,.10);
-  transition:transform var(--dur) var(--ease),background var(--dur) var(--ease);
-  z-index:0;
-}
-.bb svg,.bb span{position:relative;z-index:1}
+.bb svg{width:22px;height:22px;transition:none}
 .bb.on{color:var(--p)}
-.bb.on::before{transform:translateX(-50%) scaleX(1)}
-.bb.on svg{transform:scale(1.1)}
+.bb.on svg{stroke:var(--p)}
 @media(max-width:680px){
   .bottomnav{display:block}
   .topnav-right{display:none}
-  .screen.active{padding-bottom:calc(72px + env(safe-area-inset-bottom,0))}
+  .screen.active{padding-bottom:calc(68px + env(safe-area-inset-bottom,0))}
 }
 
 /* ── Layout ────────────────────────────── */
@@ -447,27 +435,14 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .mc:hover{background:var(--bd)}
 .mc:active{transform:scale(.92)}
 
-/* ── FAB — Floating Action Button ────────── */
-#fab{
-  position:fixed;bottom:calc(76px + env(safe-area-inset-bottom,0));right:18px;
-  width:56px;height:56px;border-radius:50%;
-  background:var(--p);color:#fff;border:none;
-  box-shadow:var(--shfab);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:190;
-  transition:transform var(--dur) var(--ease),
-             box-shadow var(--dur) var(--ease),
-             background var(--dur) var(--ease),
-             opacity var(--dur) var(--ease);
-  font-size:26px;font-weight:300;
-  opacity:0;pointer-events:none; /* hidden by default; shown by JS */
+/* ── Swipe-back gesture indicator ──────── */
+#swipe-indicator{
+  position:fixed;top:0;left:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,transparent,var(--p),transparent);
+  opacity:0;z-index:9999;pointer-events:none;border-radius:0 4px 4px 0;
+  transition:opacity 150ms;
 }
-#fab.visible{opacity:1;pointer-events:all}
-#fab:hover{background:var(--pl);box-shadow:0 8px 28px rgba(15,76,117,.45)}
-#fab:active{transform:scale(.92);box-shadow:0 3px 12px rgba(15,76,117,.3)}
-#fab svg{width:26px;height:26px;pointer-events:none}
-/* FAB hidden on desktop */
-@media(min-width:681px){#fab{display:none}}
+#swipe-indicator.visible{opacity:.5}
 
 /* ── Skeleton Loading ──────────────────── */
 @keyframes shimmer{
