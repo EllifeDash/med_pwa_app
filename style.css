@@ -274,17 +274,73 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .sl{font-size:11px;color:var(--tx3);margin-top:1px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 
 /* ── Dashboard ─────────────────────────── */
-.dash-filters{display:flex;gap:7px;flex-wrap:wrap}
+/* ── Dashboard filter bar ──────────────── */
+.dash-filter-wrap{display:flex;flex-direction:column;gap:0}
+.dash-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .dpill{
   background:var(--sur);border:1.5px solid var(--bd2);
-  border-radius:20px;padding:7px 16px;font-size:13px;font-weight:600;
+  border-radius:20px;padding:7px 14px;font-size:13px;font-weight:600;
   color:var(--tx2);cursor:pointer;
   transition:all var(--dur) var(--ease);
   box-shadow:0 1px 4px rgba(0,0,0,.06);
+  display:inline-flex;align-items:center;gap:5px;
+  white-space:nowrap;
 }
 .dpill:active{transform:scale(.95)}
 .dpill.on{background:var(--p);color:#fff;border-color:var(--p);box-shadow:0 3px 10px rgba(15,76,117,.25)}
 .dpill:hover:not(.on){border-color:var(--pl);color:var(--p)}
+.dpill-cal svg{flex-shrink:0;transition:transform var(--dur) var(--ease)}
+.dpill-cal.on svg{stroke:#fff}
+
+/* ── Custom date panel ─────────────────── */
+/* Mobile-first: panel collapses vertically */
+.custom-date-panel{
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transition:max-height .28s cubic-bezier(.4,0,.2,1),
+             opacity .22s cubic-bezier(.4,0,.2,1),
+             margin-top .28s cubic-bezier(.4,0,.2,1);
+  margin-top:0;
+}
+.custom-date-panel.open{
+  max-height:120px;
+  opacity:1;
+  margin-top:10px;
+}
+.cdp-inner{
+  display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;
+  background:var(--sur);border:1.5px solid var(--bd);
+  border-radius:var(--rl);padding:14px 16px;
+  box-shadow:var(--sh);
+}
+.cdp-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px}
+.cdp-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.cdp-input{
+  padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);
+  font-size:14px;font-family:var(--fn);color:var(--tx);background:var(--sur2);
+  outline:none;width:100%;min-width:0;
+  transition:border-color var(--dur),box-shadow var(--dur);
+}
+.cdp-input:focus{border-color:var(--pl);box-shadow:0 0 0 3px rgba(27,108,168,.1)}
+.cdp-sep{font-size:18px;color:var(--tx3);padding-bottom:8px;flex-shrink:0;align-self:flex-end}
+.cdp-apply{flex-shrink:0;align-self:flex-end;height:40px;padding:0 18px}
+.cdp-close{
+  background:none;border:none;color:var(--tx3);font-size:18px;
+  cursor:pointer;padding:4px 6px;border-radius:8px;flex-shrink:0;
+  align-self:flex-end;transition:color 150ms,background 150ms;line-height:1;
+  height:40px;width:36px;display:flex;align-items:center;justify-content:center;
+}
+.cdp-close:hover{color:var(--err);background:#fee2e2}
+/* On wider screens keep the panel more compact */
+@media(min-width:540px){
+  .cdp-inner{flex-wrap:nowrap}
+  .cdp-field{min-width:140px}
+}
+@media(max-width:380px){
+  .cdp-sep{display:none}
+}
+
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:720px){.dash-grid{grid-template-columns:1fr}}
 

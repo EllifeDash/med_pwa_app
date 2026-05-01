@@ -115,13 +115,39 @@
       <button class="btn bp" onclick="go('addVisit',null)">+ New Visit</button>
     </div>
 
-    <!-- Time range filter pills -->
-    <div class="dash-filters mb16">
-      <button class="dpill on" data-range="today" onclick="setDashRange('today',this)">Today</button>
-      <button class="dpill"    data-range="week"  onclick="setDashRange('week',this)">This Week</button>
-      <button class="dpill"    data-range="month" onclick="setDashRange('month',this)">This Month</button>
-      <button class="dpill"    data-range="year"  onclick="setDashRange('year',this)">This Year</button>
-      <button class="dpill"    data-range="all"   onclick="setDashRange('all',this)">All Time</button>
+    <!-- Time range filter pills + custom date picker -->
+    <div class="dash-filter-wrap mb16">
+      <div class="dash-filters">
+        <button class="dpill on" data-range="today" onclick="setDashRange('today',this)">Today</button>
+        <button class="dpill"    data-range="week"  onclick="setDashRange('week',this)">This Week</button>
+        <button class="dpill"    data-range="month" onclick="setDashRange('month',this)">This Month</button>
+        <button class="dpill"    data-range="year"  onclick="setDashRange('year',this)">This Year</button>
+        <button class="dpill"    data-range="all"   onclick="setDashRange('all',this)">All Time</button>
+        <button class="dpill dpill-cal" data-range="custom" onclick="toggleCustomPanel()" aria-label="Custom date range">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Custom
+        </button>
+      </div>
+
+      <!-- Custom date panel — slides down on mobile, inline on desktop -->
+      <div id="customDatePanel" class="custom-date-panel">
+        <div class="cdp-inner">
+          <div class="cdp-field">
+            <label class="cdp-label">From</label>
+            <input id="customStart" type="date" class="cdp-input"/>
+          </div>
+          <div class="cdp-sep">—</div>
+          <div class="cdp-field">
+            <label class="cdp-label">To</label>
+            <input id="customEnd" type="date" class="cdp-input"/>
+          </div>
+          <button class="cdp-apply btn bp bsm" onclick="applyCustomRange()">Apply</button>
+          <button class="cdp-close" onclick="closeCustomPanel()" aria-label="Close">✕</button>
+        </div>
+      </div>
     </div>
 
     <!-- KPI cards -->
