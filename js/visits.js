@@ -118,9 +118,10 @@ function resetForm() {
 // ── Save visit ────────────────────────────
 
 /**
- * CHANGED: Writes patient + visit to Supabase.
- * Patient: upsert into `patients` table (preserves existing photo etc.)
- * Visit:   insert into `visits` table.
+ * Writes patient + visit to Supabase.
+ * CHANGED: If device is offline, the visit is saved to the
+ * IndexedDB offline queue (via offline.js) and synced
+ * automatically when the connection is restored.
  */
 async function saveVisit() {
   const name = document.getElementById('fName').value.trim();
@@ -153,11 +154,6 @@ async function saveVisit() {
       pt.address =  document.getElementById('fAddr').value.trim()   || pt.address;
     }
 
-    // CHANGED: upsert patient to Supabase (onConflict='id' to merge)
-    const { error: ptErr } = await SB.from('patients')
-      .upsert({ ...pt, user_id: uid }, { onConflict: 'id' });
-    if (ptErr) throw ptErr;
-
     const sub  = Object.values(selSvcs).reduce((a, b) => a + (+b || 0), 0);
     const disc = +(document.getElementById('fDisc').value || 0);
 
@@ -178,12 +174,30 @@ async function saveVisit() {
       createdAt:  new Date().toISOString(),
     };
 
-    // CHANGED: insert visit to Supabase
+    // ── OFFLINE BRANCH ────────────────────
+    // If no internet, queue locally and show receipt from cache data.
+    if (!navigator.onLine) {
+      await addToOfflineQueue({ pt, v });
+      // Add to in-memory cache so receipt preview works
+      const cachedPt = window._cache.patients.find(p => p.id === pt.id);
+      if (cachedPt) Object.assign(cachedPt, pt);
+      else window._cache.patients.push({ ...pt, user_id: uid });
+      window._cache.visits.push({ ...v, user_id: uid });
+      toast('Saved offline — will sync when connected');
+      previewReceipt(v.id);
+      resetForm();
+      return;
+    }
+
+    // ── ONLINE BRANCH ─────────────────────
+    const { error: ptErr } = await SB.from('patients')
+      .upsert({ ...pt, user_id: uid }, { onConflict: 'id' });
+    if (ptErr) throw ptErr;
+
     const { error: visErr } = await SB.from('visits')
       .insert({ ...v, user_id: uid });
     if (visErr) throw visErr;
 
-    // Optimistically update cache (real-time channel will also confirm)
     const cachedPt = window._cache.patients.find(p => p.id === pt.id);
     if (cachedPt) Object.assign(cachedPt, pt);
     else window._cache.patients.push({ ...pt, user_id: uid });

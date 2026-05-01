@@ -608,3 +608,72 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(min-width:681px){#toast{bottom:22px}}
+
+/* ════════════════════════════════════════
+   NEW FEATURE STYLES
+   WhatsApp button · Offline banner ·
+   Monthly Report · CSV export
+   ════════════════════════════════════════ */
+
+/* ── WhatsApp share button ─────────────── */
+.btn-wa{
+  background:#25d366;color:#fff;
+  box-shadow:0 2px 8px rgba(37,211,102,.30);
+}
+.btn-wa:hover{background:#1ebe5d;box-shadow:0 4px 14px rgba(37,211,102,.35)}
+.btn-wa:active{transform:scale(.97)}
+.btn-wa .ripple{background:rgba(255,255,255,.25)}
+
+/* ── Offline / sync banner ─────────────── */
+.offline-banner{
+  display:flex;align-items:center;gap:9px;
+  padding:10px 16px;font-size:13px;font-weight:600;
+  position:sticky;top:58px;z-index:90;
+  box-shadow:0 2px 8px rgba(0,0,0,.10);
+  animation:slideDown .22s var(--ease) both;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.offline-banner--offline{background:#fef2f2;color:#991b1b;border-bottom:1px solid #fecaca}
+.offline-banner--offline svg{stroke:#ef4444}
+.offline-banner--syncing{background:#fffbeb;color:#92400e;border-bottom:1px solid #fde68a}
+.offline-banner--syncing svg{stroke:var(--warn)}
+
+/* ── Monthly Report page ───────────────── */
+.rpt-month-pick{
+  padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);
+  font-size:14px;font-family:var(--fn);color:var(--tx);background:var(--sur);
+  outline:none;cursor:pointer;max-width:160px;
+  transition:border-color var(--dur),box-shadow var(--dur);
+}
+.rpt-month-pick:focus{border-color:var(--pl);box-shadow:0 0 0 3px rgba(27,108,168,.10)}
+
+/* "vs previous month" line under each KPI */
+.rpt-vs{
+  font-size:12px;color:var(--tx3);margin-top:5px;
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+}
+.rpt-delta{
+  font-size:11px;font-weight:700;padding:2px 7px;
+  border-radius:20px;white-space:nowrap;
+}
+.rpt-delta.up  {background:#dcfce7;color:#166534}
+.rpt-delta.down{background:#fee2e2;color:#991b1b}
+.rpt-delta.flat{background:#f1f5f9;color:#475569}
+
+/* Summary grid — 3 quick stats in a row */
+.rpt-summary-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+}
+.rpt-sum-item{
+  text-align:center;padding:12px 8px;
+  border-right:1px solid var(--bd);
+}
+.rpt-sum-item:last-child{border-right:none}
+.rpt-sum-val{font-size:17px;font-weight:800;color:var(--p);letter-spacing:-.01em}
+.rpt-sum-lbl{font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+@media(max-width:380px){
+  .rpt-summary-grid{grid-template-columns:1fr}
+  .rpt-sum-item{border-right:none;border-bottom:1px solid var(--bd);padding:10px 8px}
+  .rpt-sum-item:last-child{border-bottom:none}
+}
+

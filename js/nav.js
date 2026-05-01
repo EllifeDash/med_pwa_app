@@ -2,7 +2,7 @@
 // nav.js — Page Navigation / Routing
 // ════════════════════════════════════════
 
-const pages = ['dashboard', 'patients', 'addVisit', 'history', 'settings'];
+const pages = ['dashboard', 'patients', 'addVisit', 'history', 'settings', 'report'];
 
 /**
  * Switch to a named page. Updates nav button active states
@@ -24,4 +24,5 @@ function go(pg, btn) {
   if (pg === 'patients')  renderPatients();
   if (pg === 'addVisit')  renderSvcTags();
   if (pg === 'settings')  renderSettings();
+  if (pg === 'report')    initReport();
 }

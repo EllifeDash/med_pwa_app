@@ -1,15 +1,9 @@
 // ════════════════════════════════════════
 // receipt.js — Receipt Preview & Export
-// Builds the HTML receipt, opens it in the
-// modal, and saves it as a JPEG image via
-// html2canvas.
+// CHANGED: Added shareWhatsApp() for
+//          WhatsApp text summary share.
 // ════════════════════════════════════════
 
-/**
- * Build the full receipt HTML string for a given visit ID.
- * @param  {string} vid - Visit ID
- * @returns {Promise<string>} HTML string
- */
 async function buildReceipt(vid) {
   const v = (await gVis()).find(x => x.id === vid);
   if (!v) return '<p>Not found</p>';
@@ -70,34 +64,68 @@ async function buildReceipt(vid) {
   </div>`;
 }
 
-/**
- * Render the receipt into the modal and open it.
- * @param {string} vid - Visit ID
- */
 async function previewReceipt(vid) {
-  document.getElementById('rcptContent').innerHTML      = await buildReceipt(vid);
-  document.getElementById('rcptContent').dataset.vid    = vid;
+  document.getElementById('rcptContent').innerHTML   = await buildReceipt(vid);
+  document.getElementById('rcptContent').dataset.vid = vid;
   openMo('rcptModal');
 }
 
-/**
- * Export the currently-previewed receipt as a JPEG image
- * and trigger a file download via html2canvas.
- */
 async function saveImage() {
   const el = document.getElementById('rcptContent');
-  const canvas = await html2canvas(el, {
-    scale:           2,
-    useCORS:         true,
-    backgroundColor: '#ffffff'
-  });
+  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const a   = document.createElement('a');
-    a.href     = url;
-    a.download = 'Receipt_' + Date.now() + '.jpg';
+    a.href = url; a.download = 'Receipt_' + Date.now() + '.jpg';
     a.click();
     URL.revokeObjectURL(url);
     toast('Receipt saved to device!');
   }, 'image/jpeg', 0.95);
+}
+
+/**
+ * ADDED: Share a plain-text receipt summary via WhatsApp.
+ * Opens wa.me with a pre-filled message — works on both
+ * mobile (opens WhatsApp app) and desktop (opens web).
+ */
+async function shareWhatsApp() {
+  const vid = document.getElementById('rcptContent').dataset.vid;
+  if (!vid) return;
+
+  const v   = (await gVis()).find(x => x.id === vid);
+  if (!v)   return;
+  const s   = await gSet();
+  const rno = vid.replace('v_', '').slice(-6);
+
+  const serviceLines = (v.services || [])
+    .map(svc => `  • ${svc.name} — Rs. ${(svc.price || 0).toLocaleString()}`)
+    .join('\n');
+
+  const discountLine = v.discount
+    ? `\nDiscount:  -Rs. ${v.discount.toLocaleString()}`
+    : '';
+
+  const text = [
+    `🏥 *${s.businessName || 'MediAssist Pro'}*`,
+    s.tagline ? `_${s.tagline}_` : '',
+    '',
+    `📋 *Receipt #${rno}*`,
+    `📅 ${fmtDate(v.date)}${v.time ? '  ' + v.time : ''}`,
+    '',
+    `👤 *Patient:* ${v.patientName}`,
+    '',
+    `*Services:*`,
+    serviceLines,
+    '',
+    `Subtotal:  Rs. ${(v.subtotal || 0).toLocaleString()}${discountLine}`,
+    `*Total:    Rs. ${(v.net || 0).toLocaleString()}*`,
+    '',
+    s.phone   ? `📞 ${s.phone}`   : '',
+    s.address ? `📍 ${s.address}` : '',
+    '',
+    '_Sent via MediAssist Pro_',
+  ].filter(l => l !== null).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+  window.open(url, '_blank', 'noopener');
 }
