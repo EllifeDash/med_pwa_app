@@ -1,237 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#0f4c75"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="MediAssist"/>
-<title>MediAssist Pro</title>
-<link rel="manifest" href="manifest.json"/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --p:#0f4c75;--pl:#1b6ca8;--pd:#093a5c;
-  --ac:#00b4d8;--ac2:#90e0ef;
-  --ok:#10b981;--err:#ef4444;--warn:#f59e0b;
-  --bg:#f0f4f8;--sur:#ffffff;--sur2:#f8fafc;
-  --tx:#1a2332;--tx2:#4a5568;--tx3:#94a3b8;
-  --bd:#e2e8f0;--bd2:#cbd5e1;
-  --r:12px;--rs:8px;--rl:18px;--rxl:24px;
-  --sh:0 2px 12px rgba(15,76,117,.10);
-  --shl:0 8px 32px rgba(15,76,117,.15);
-  --fn:'Plus Jakarta Sans',sans-serif;
-  --fd:'Playfair Display',serif;
-}
-html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:15px;line-height:1.6}
-h1,h2,h3,h4{line-height:1.3;font-weight:700}
-button{font-family:var(--fn);cursor:pointer;border:none;outline:none}
-input,select,textarea{font-family:var(--fn);font-size:14px;border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 14px;width:100%;background:var(--sur);color:var(--tx);outline:none;transition:border .2s}
-input:focus,select:focus,textarea:focus{border-color:var(--pl)}
-textarea{resize:vertical;min-height:72px}
-label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-bottom:5px}
- 
-.screen{display:none;min-height:100vh}
-.screen.active{display:block}
- 
-/* NAV */
-.topnav{background:var(--p);color:#fff;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.logo{font-family:var(--fd);font-size:19px}.logo em{color:var(--ac);font-style:normal}
-.topnav-right{display:flex;gap:6px}
-.nbtn{background:rgba(255,255,255,.13);color:#fff;border:none;border-radius:var(--rs);padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;transition:background .18s}
-.nbtn:hover{background:rgba(255,255,255,.23)}
-.nbtn.on{background:var(--ac);color:#000}
- 
-.bottomnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bd);z-index:200;padding:6px 0 env(safe-area-inset-bottom,0)}
-.bni{display:flex;justify-content:space-around}
-.bb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;font-family:var(--fn);font-size:11px;color:var(--tx3);padding:6px 4px;cursor:pointer;transition:color .18s}
-.bb svg{width:22px;height:22px}
-.bb.on{color:var(--p)}
-@media(max-width:680px){
-  .bottomnav{display:block}
-  .topnav-right{display:none}
-  .screen.active{padding-bottom:calc(72px + env(safe-area-inset-bottom,0))}
-}
- 
-/* LAYOUT */
-.pw{max-width:900px;margin:0 auto;padding:24px 18px}
-.ptitle{font-size:22px;font-weight:700;margin-bottom:3px}
-.psub{font-size:14px;color:var(--tx2);margin-bottom:20px}
- 
-/* CARD */
-.card{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:18px 20px;box-shadow:var(--sh)}
-.card+.card{margin-top:14px}
- 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--rs);padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:all .18s}
-.bp{background:var(--p);color:#fff}.bp:hover{background:var(--pl)}
-.ba{background:var(--ac);color:#000}.ba:hover{filter:brightness(1.1)}
-.bd{background:#fef2f2;color:var(--err);border:1px solid #fecaca}.bd:hover{background:#fee2e2}
-.bg{background:transparent;color:var(--tx2);border:1.5px solid var(--bd2)}.bg:hover{background:var(--bg)}
-.bs{background:#ecfdf5;color:var(--ok);border:1px solid #a7f3d0}.bs:hover{background:#d1fae5}
-.bsm{padding:7px 12px;font-size:13px}
-.bfl{width:100%;justify-content:center}
- 
-/* BADGE */
-.bdg{display:inline-block;border-radius:20px;padding:2px 9px;font-size:12px;font-weight:600}
-.b-blue{background:#e0f2fe;color:#0369a1}.b-green{background:#dcfce7;color:#166534}
-.b-amber{background:#fef3c7;color:#92400e}.b-red{background:#fee2e2;color:#991b1b}.b-gray{background:#f1f5f9;color:#475569}
- 
-/* FORM */
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-@media(max-width:520px){.fg{grid-template-columns:1fr}}
-.fi{display:flex;flex-direction:column}
-.fi.s2{grid-column:1/-1}
- 
-/* TABLE */
-.tbl{width:100%;border-collapse:collapse;font-size:14px}
-.tbl th{text-align:left;padding:9px 11px;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--bd)}
-.tbl td{padding:11px 11px;border-bottom:1px solid var(--bd);vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:var(--bg)}
- 
-/* SEARCH */
-.sbar{display:flex;gap:9px;margin-bottom:16px}
-.sbar input{flex:1}
- 
-/* PATIENT CARD */
-.pc{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:box-shadow .2s,border-color .2s;box-shadow:var(--sh)}
-.pc:hover{box-shadow:var(--shl);border-color:var(--pl)}
-.pc+.pc{margin-top:9px}
-.av{width:46px;height:46px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;overflow:hidden}
-.av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.av.f{background:#7c3aed}.av.c{background:#059669}
-.pi{flex:1;min-width:0}
-.pn{font-weight:700;font-size:15px}
-.pm{font-size:13px;color:var(--tx2)}
-.pst{text-align:right;flex-shrink:0}
-.pst .vc{font-size:20px;font-weight:700;color:var(--p)}
-.pst .vl{font-size:12px;color:var(--tx3)}
- 
-/* SERVICE TAG */
-.stag{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--bd2);border-radius:20px;padding:5px 11px;font-size:13px;cursor:pointer;transition:all .18s;user-select:none}
-.stag.sel{background:var(--p);color:#fff;border-color:var(--p)}
-.stw{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
- 
-/* HISTORY */
-.hi{border-left:3px solid var(--pl);padding:11px 13px;background:var(--sur2);border-radius:0 var(--rs) var(--rs) 0;margin-bottom:9px}
-.hd{font-size:12px;color:var(--tx3);margin-bottom:3px}
-.hs{font-size:14px;font-weight:600}
-.hn{font-size:13px;color:var(--tx2);margin-top:3px}
-.ha{font-size:14px;color:var(--ok);font-weight:700;margin-top:2px}
- 
-/* STATS */
-.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:11px;margin-bottom:20px}
-.scard{background:var(--sur);border-radius:var(--rl);border:1px solid var(--bd);padding:14px 16px;text-align:center}
-.sv{font-size:26px;font-weight:700;color:var(--p)}
-.sl{font-size:12px;color:var(--tx3);margin-top:1px}
- 
-/* PHOTO UPLOAD */
-.photo-upload-area{width:100px;height:100px;border-radius:50%;border:2.5px dashed var(--bd2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;overflow:hidden;flex-shrink:0;background:var(--sur2)}
-.photo-upload-area:hover{border-color:var(--pl)}
-.photo-upload-area img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.photo-upload-area .pu-hint{font-size:11px;color:var(--tx3);text-align:center;padding:6px;line-height:1.3}
-.photo-upload-area svg{width:28px;height:28px;color:var(--tx3);margin-bottom:4px}
- 
-/* DOCUMENT UPLOAD */
-.doc-card{background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;display:flex;align-items:center;gap:10px}
-.doc-icon{width:36px;height:36px;border-radius:var(--rs);background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.doc-info{flex:1;min-width:0}
-.doc-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.doc-meta{font-size:12px;color:var(--tx3)}
-.doc-del{background:none;border:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;font-size:16px;transition:color .2s;flex-shrink:0}
-.doc-del:hover{color:var(--err)}
-.doc-thumb{width:36px;height:36px;object-fit:cover;border-radius:6px}
- 
-/* STORAGE BAR */
-.stor-bar{background:var(--bg);border-radius:20px;height:6px;overflow:hidden;margin-top:4px}
-.stor-fill{height:100%;border-radius:20px;background:var(--ok);transition:width .4s}
-.stor-fill.warn{background:var(--warn)}
-.stor-fill.danger{background:var(--err)}
- 
-/* WELCOME */
-@keyframes wFadeIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-#ws{background:linear-gradient(145deg,#0d3b5c 0%,#0f4c75 40%,#1565a8 75%,#00b4d8 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 18px;position:relative;overflow:hidden}
-#ws .wv{position:absolute;bottom:-10px;left:0;right:0;opacity:.18}
-/* Spinner */
-#wsSpinner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;pointer-events:none}
-.spin-ring{width:46px;height:46px;border:4px solid rgba(255,255,255,.22);border-top-color:#fff;border-radius:50%;animation:spin .75s linear infinite}
-/* Card */
-.wcard{background:rgba(255,255,255,.97);border-radius:var(--rxl);padding:26px 28px 28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.32);position:relative;z-index:2;text-align:center;opacity:0}
-.wcard-ready{animation:wFadeIn .6s ease forwards}
-/* Top row: logo + brand */
-.wcard-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;text-align:left}
-.wlogo-wrap{width:56px;height:56px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--sur2);border:1.5px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center}
-.wlogo-wrap img{width:100%;height:100%;object-fit:contain;padding:3px}
-.wlogo-hint{font-size:9px;color:var(--tx3);text-align:center;line-height:1.2;padding:2px}
-.wbrand{font-family:var(--fd);font-size:22px;color:var(--p);line-height:1.2}.wbrand em{color:var(--ac);font-style:normal}
-.wtag{font-size:12px;color:var(--tx3);margin-top:1px}
-/* Subject photo */
-.wsubject-wrap{display:flex;justify-content:center;margin:4px -28px 10px;min-height:190px;max-height:270px;overflow:hidden}
-.wsubject-img{max-width:100%;max-height:270px;object-fit:contain;object-position:center top}
-.wsubject-placeholder{width:100%;min-height:190px;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#e8f4fd 0%,#dbeafe 100%)}
-/* Name / rank display */
-.wdisplay-name{font-size:21px;font-weight:700;color:var(--tx);margin-bottom:2px}
-.wdisplay-rank{font-size:13px;color:var(--tx2);margin-bottom:20px}
-/* compat — hidden inputs kept for saveProfile() */
-.winputs{display:none}
-.wactions{display:none}
- 
-/* MODAL */
-.mo{position:fixed;inset:0;background:rgba(10,20,40,.45);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
-.mo.open{opacity:1;pointer-events:all}
-.mb{background:var(--sur);border-radius:var(--rxl) var(--rxl) 0 0;width:100%;max-width:640px;max-height:93vh;overflow-y:auto;padding:26px 22px 32px;transform:translateY(40px);transition:transform .28s;-webkit-overflow-scrolling:touch}
-.mo.open .mb{transform:translateY(0)}
-.mc{position:absolute;top:16px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
- 
-/* RECEIPT */
-.rw{background:#fff;border-radius:var(--rl);border:2px solid var(--bd);padding:24px 26px;font-family:var(--fn);max-width:580px;margin:0 auto}
-.rh{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid var(--p);padding-bottom:14px;margin-bottom:14px}
-.rb{font-family:var(--fd);font-size:20px;color:var(--p)}
-.rb span{color:var(--ac);display:block;font-size:11px;font-family:var(--fn);font-weight:500;margin-top:1px}
-.rm{text-align:right;font-size:13px;color:var(--tx2)}
-.rp{background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:14px}
-.rp strong{display:block;font-size:15px;margin-bottom:3px}
-.rtbl{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px}
-.rtbl th{text-align:left;padding:7px 9px;background:var(--p);color:#fff;font-size:12px;font-weight:600}
-.rtbl td{padding:8px 9px;border-bottom:1px solid var(--bd)}
-.rtbl tr:last-child td{border-bottom:none}
-.rtot{display:flex;justify-content:flex-end;gap:36px;font-weight:700;font-size:16px;border-top:2px solid var(--p);padding-top:9px}
-.rfoot{margin-top:16px;font-size:12px;color:var(--tx3);text-align:center;border-top:1px solid var(--bd);padding-top:10px}
- 
-/* SETTINGS SVC */
-.sstit{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3);margin:22px 0 9px}
-.sr{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--bd)}
-.sr:last-child{border-bottom:none}
-.sdel{background:none;border:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;font-size:17px;transition:color .2s;flex-shrink:0}
-.sdel:hover{color:var(--err)}
- 
-/* UTILS */
-.flex{display:flex}.ic{align-items:center}.jb{justify-content:space-between}
-.g8{gap:8px}.g12{gap:12px}.g16{gap:16px}
-.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
-.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
-.tsm{font-size:13px}.txs{font-size:12px}.ts{color:var(--tx2)}.te{color:var(--err)}.fw6{font-weight:600}
-.divider{border:none;border-top:1px solid var(--bd);margin:16px 0}
-.empty{text-align:center;padding:36px 18px;color:var(--tx3)}
-.empty svg{width:48px;height:48px;margin-bottom:10px;opacity:.3}
-.empty p{font-size:15px;font-weight:600}.empty span{font-size:13px}
-#toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:9px 20px;border-radius:30px;font-size:14px;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:opacity .28s;white-space:nowrap}
-@media(min-width:681px){#toast{bottom:22px}}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0f4c75"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="MediAssist"/>
+  <title>MediAssist Pro</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
- 
-<!-- ══════════ WELCOME SCREEN ══════════ -->
-<div id="ws" class="screen active">
+
+<!-- ══════════════════════════════════════
+     ACCESS DENIED SCREEN
+     Shown only when no valid session exists.
+     No login form — users are created manually
+     by the admin in the Supabase dashboard.
+══════════════════════════════════════ -->
+<div id="accessDenied" style="display:none">
+  <div class="ad-card">
+    <div class="ad-icon">🔒</div>
+    <div class="ad-logo">Medi<em>Assist</em> Pro</div>
+    <div class="ad-title">Access Required</div>
+    <div class="ad-msg">
+      This is a restricted system.<br/>
+      Contact your administrator to get access.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     WELCOME SCREEN (shown after sign-in)
+══════════════════════════════════════ -->
+<div id="ws" class="screen">
+
   <!-- Loading spinner (visible while data loads) -->
   <div id="wsSpinner"><div class="spin-ring"></div></div>
- 
+
   <div class="wcard" id="wsCard">
-    <!-- Top row: logo (left) + brand title + tagline (right) -->
+
+    <!-- Top row: logo (left) + brand + tagline (right) -->
     <div class="wcard-top">
       <div class="wlogo-wrap" id="wLogoWrap">
         <span class="wlogo-hint">Logo</span>
@@ -241,94 +52,195 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         <div class="wtag" id="wTagline">Your Mobile Medical Companion</div>
       </div>
     </div>
- 
+
     <!-- Subject / profile photo — centered, full-bleed -->
     <div class="wsubject-wrap" id="wSubjectWrap">
       <div class="wsubject-placeholder" id="wSubjectPlaceholder">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(15,76,117,.2)" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(15,76,117,.2)" stroke-width="1">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
       </div>
     </div>
- 
+
     <!-- Name and designation (display only — edit in Settings) -->
     <div class="wdisplay-name" id="wDisplayName">Your Name</div>
     <div class="wdisplay-rank" id="wDisplayRank">Rank / Designation</div>
- 
+
     <!-- Enter App button -->
     <button class="btn bp bfl" onclick="enterApp()">Enter App</button>
- 
+
     <!-- Hidden inputs kept for saveProfile() compatibility -->
     <div class="winputs">
       <input id="iName" type="text"/>
       <input id="iRank" type="text"/>
     </div>
-  </div>
- 
+
+  </div><!-- /.wcard -->
+
   <svg class="wv" viewBox="0 0 1440 160" xmlns="http://www.w3.org/2000/svg">
     <path fill="#fff" d="M0,80 C360,160 1080,0 1440,80 L1440,160 L0,160 Z"/>
   </svg>
-</div>
- 
-<!-- ══════════ MAIN APP ══════════ -->
+
+</div><!-- /#ws -->
+
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════ -->
 <div id="app" class="screen">
+
+  <!-- ── Top Navigation ────────────────── -->
   <nav class="topnav">
     <div class="logo">Medi<em>Assist</em> Pro</div>
     <div class="topnav-right">
       <button class="nbtn on" data-pg="dashboard" onclick="go('dashboard',this)">Dashboard</button>
-      <button class="nbtn" data-pg="patients" onclick="go('patients',this)">Patients</button>
-      <button class="nbtn" data-pg="addVisit" onclick="go('addVisit',this)">+ New Visit</button>
-      <button class="nbtn" data-pg="settings" onclick="go('settings',this)">Settings</button>
+      <button class="nbtn"    data-pg="patients"  onclick="go('patients',this)">Patients</button>
+      <button class="nbtn"    data-pg="addVisit"  onclick="go('addVisit',this)">+ New Visit</button>
+      <button class="nbtn"    data-pg="report"    onclick="go('report',this)">Report</button>
+      <button class="nbtn"    data-pg="settings"  onclick="go('settings',this)">Settings</button>
       <button class="nbtn" onclick="logout()" style="background:rgba(255,255,255,.08)">Logout</button>
     </div>
   </nav>
- 
-  <!-- DASHBOARD -->
+
+  <!-- Offline status banner -->
+  <div id="offlineBanner" class="offline-banner" style="display:none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <line x1="1" y1="1" x2="23" y2="23"/>
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+      <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      <line x1="12" y1="20" x2="12.01" y2="20"/>
+    </svg>
+    <span id="offlineCount">You are offline</span>
+  </div>
+
+
+  <!-- ══════════ DASHBOARD ══════════ -->
   <div id="pg-dashboard" class="pw">
+
+    <!-- Header row -->
     <div class="flex ic jb mb12">
       <div>
         <div class="ptitle" id="dashGreet">Welcome!</div>
-        <div class="psub" id="dashDate"></div>
+        <div class="psub"   id="dashDate"></div>
       </div>
       <button class="btn bp" onclick="go('addVisit',null)">+ New Visit</button>
     </div>
-    <div class="sgrid" id="statsGrid"></div>
-    <div class="card">
-      <div class="flex ic jb mb12">
-        <h3>Recent Visits</h3>
-        <button class="btn bg bsm" onclick="go('patients',null)">All Patients →</button>
+
+    <!-- Time range filter pills + custom date picker -->
+    <div class="dash-filter-wrap mb16">
+      <div class="dash-filters">
+        <button class="dpill on" data-range="today" onclick="setDashRange('today',this)">Today</button>
+        <button class="dpill"    data-range="week"  onclick="setDashRange('week',this)">This Week</button>
+        <button class="dpill"    data-range="month" onclick="setDashRange('month',this)">This Month</button>
+        <button class="dpill"    data-range="year"  onclick="setDashRange('year',this)">This Year</button>
+        <button class="dpill"    data-range="all"   onclick="setDashRange('all',this)">All Time</button>
+        <button class="dpill dpill-cal" data-range="custom" onclick="toggleCustomPanel()" aria-label="Custom date range">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Custom
+        </button>
       </div>
-      <div id="recentVisits"></div>
+
+      <!-- Custom date panel — slides down on mobile, inline on desktop -->
+      <div id="customDatePanel" class="custom-date-panel">
+        <div class="cdp-inner">
+          <div class="cdp-field">
+            <label class="cdp-label">From</label>
+            <input id="customStart" type="date" class="cdp-input"/>
+          </div>
+          <div class="cdp-sep">—</div>
+          <div class="cdp-field">
+            <label class="cdp-label">To</label>
+            <input id="customEnd" type="date" class="cdp-input"/>
+          </div>
+          <button class="cdp-apply btn bp bsm" onclick="applyCustomRange()">Apply</button>
+          <button class="cdp-close" onclick="closeCustomPanel()" aria-label="Close">✕</button>
+        </div>
+      </div>
     </div>
-  </div>
- 
-  <!-- PATIENTS -->
+
+    <!-- KPI cards -->
+    <div id="statsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
+
+    <!-- Charts row -->
+    <div class="dash-grid mb14">
+      <div class="card">
+        <div class="flex ic jb mb12">
+          <h3 id="dashChartTitle">Revenue Trend</h3>
+          <span class="bdg b-blue" id="dashChartBadge"></span>
+        </div>
+        <div id="dashChart"></div>
+      </div>
+      <div class="card">
+        <h3 class="mb12">Top Services</h3>
+        <div id="dashTopSvcs"></div>
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="dash-grid">
+      <div class="card">
+        <div class="flex ic jb mb12">
+          <h3>Recent Visits</h3>
+          <button class="btn bg bsm" onclick="go('patients',null)">All Patients →</button>
+        </div>
+        <div id="recentVisits"></div>
+      </div>
+      <div class="card">
+        <h3 class="mb12">Top Patients</h3>
+        <div id="dashTopPts"></div>
+      </div>
+    </div>
+
+  </div><!-- /#pg-dashboard -->
+
+
+  <!-- ══════════ PATIENTS ══════════ -->
   <div id="pg-patients" class="pw" style="display:none">
     <div class="ptitle">Patients</div>
-    <div class="psub">Tap a patient to view history, medical records & more</div>
+    <div class="psub">Tap a patient to view history, medical records &amp; more</div>
     <div class="sbar">
       <input type="text" id="pSearch" placeholder="Search name, phone, address…" oninput="renderPatients()"/>
       <button class="btn bp" onclick="go('addVisit',null)">+ New</button>
     </div>
     <div id="patientsList"></div>
-  </div>
- 
-  <!-- ADD VISIT -->
+  </div><!-- /#pg-patients -->
+
+
+  <!-- ══════════ ADD VISIT ══════════ -->
   <div id="pg-addVisit" class="pw" style="display:none">
     <div class="ptitle">New Visit</div>
     <div class="psub">Record patient details and services provided</div>
+
+    <!-- Patient info -->
     <div class="card mb12">
       <h3 class="mb12">Patient Information</h3>
       <div id="existingBanner" style="display:none;background:#e0f2fe;border-radius:var(--rs);padding:10px 13px;margin-bottom:13px;font-size:14px;color:#0369a1"></div>
       <div class="fg">
         <div class="fi"><label>Patient Name *</label><input id="fName" type="text" placeholder="Full Name" oninput="suggestPt()"/></div>
         <div class="fi"><label>Age</label><input id="fAge" type="number" placeholder="Years" min="0" max="120"/></div>
-        <div class="fi"><label>Gender</label>
-          <select id="fGender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+        <div class="fi">
+          <label>Gender</label>
+          <select id="fGender">
+            <option value="">Select</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
         </div>
         <div class="fi"><label>Phone</label><input id="fPhone" type="tel" placeholder="03xx-xxxxxxx"/></div>
         <div class="fi s2"><label>Address</label><input id="fAddr" type="text" placeholder="Full address"/></div>
       </div>
       <div id="ptSugg" style="display:none;border:1px solid var(--bd);border-radius:var(--rs);margin-top:6px;max-height:170px;overflow-y:auto;background:var(--sur)"></div>
     </div>
+
+    <!-- Visit details -->
     <div class="card mb12">
       <h3 class="mb12">Visit Details</h3>
       <div class="fg">
@@ -337,40 +249,62 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         <div class="fi s2"><label>Chief Complaint / Notes</label><textarea id="fNotes" placeholder="Brief description…"></textarea></div>
       </div>
     </div>
+
+    <!-- Services -->
     <div class="card mb12">
       <h3 class="mb12">Services Provided</h3>
       <p class="tsm ts mb12">Tap to select. Prices are editable in the table.</p>
       <div class="stw" id="svcTags"></div>
       <div id="svcTable" style="margin-top:15px"></div>
     </div>
+
+    <!-- Amount -->
     <div class="card mb12">
-      <div class="flex ic jb"><h3>Amount</h3><div style="font-size:24px;font-weight:700;color:var(--p)" id="vTotal">Rs. 0</div></div>
-      <div class="fi mt16"><label>Discount (Rs.)</label><input id="fDisc" type="number" placeholder="0" value="0" min="0" oninput="calcTotal()"/></div>
+      <div class="flex ic jb">
+        <h3>Amount</h3>
+        <div style="font-size:24px;font-weight:700;color:var(--p)" id="vTotal">Rs. 0</div>
+      </div>
+      <div class="fi mt16">
+        <label>Discount (Rs.)</label>
+        <input id="fDisc" type="number" placeholder="0" value="0" min="0" oninput="calcTotal()"/>
+      </div>
       <div class="flex ic jb mt16" style="font-size:17px;font-weight:700;border-top:2px solid var(--bd);padding-top:13px">
-        <span>Net Payable</span><span id="vNet" style="color:var(--ok)">Rs. 0</span>
+        <span>Net Payable</span>
+        <span id="vNet" style="color:var(--ok)">Rs. 0</span>
       </div>
     </div>
+
     <div class="flex g12">
       <button class="btn bg bfl" onclick="resetForm()">Clear</button>
-      <button class="btn bp bfl" onclick="saveVisit()">Save & Preview Receipt</button>
+      <button class="btn bp bfl" onclick="saveVisit()">Save &amp; Preview Receipt</button>
     </div>
-  </div>
- 
-  <!-- PATIENT HISTORY PAGE (full-page) -->
+
+  </div><!-- /#pg-addVisit -->
+
+
+  <!-- ══════════ PATIENT HISTORY ══════════ -->
   <div id="pg-history" class="pw" style="display:none">
+
+    <!-- Back + title -->
     <div class="flex ic g12 mb16">
       <button class="btn bg bsm" onclick="go('patients',null)">← Back</button>
       <div>
         <div class="ptitle" id="hpName">Patient History</div>
-        <div class="psub" id="hpMeta" style="margin-bottom:0"></div>
+        <div class="psub"   id="hpMeta" style="margin-bottom:0"></div>
       </div>
     </div>
+
     <!-- Profile photo + basic info -->
     <div class="card mb12">
       <div class="flex ic g16">
         <div style="position:relative">
-          <div class="photo-upload-area" id="hpAv" onclick="document.getElementById('hpPhotoInput').click()" style="width:80px;height:80px"></div>
-          <input type="file" id="hpPhotoInput" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none" onchange="handlePatientPhoto(this)"/>
+          <div class="photo-upload-area" id="hpAv"
+               onclick="document.getElementById('hpPhotoInput').click()"
+               style="width:80px;height:80px"></div>
+          <input type="file" id="hpPhotoInput"
+                 accept="image/png,image/jpeg,image/jpg,image/webp"
+                 style="display:none"
+                 onchange="handlePatientPhoto(this)"/>
         </div>
         <div style="flex:1">
           <div style="font-size:18px;font-weight:700" id="hpFullName"></div>
@@ -379,7 +313,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         </div>
       </div>
     </div>
- 
+
     <!-- Medical History Notes -->
     <div class="card mb12">
       <div class="flex ic jb mb12">
@@ -388,38 +322,84 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       </div>
       <div id="histNotes"></div>
     </div>
- 
+
     <!-- Documents & Reports -->
     <div class="card mb12">
       <div class="flex ic jb mb12">
         <div>
-          <h3>Documents & Reports</h3>
-          <div class="txs ts mt4">Images & PDFs stored locally</div>
+          <h3>Documents &amp; Reports</h3>
+          <div class="txs ts mt4">Images &amp; PDFs stored locally</div>
         </div>
         <button class="btn bp bsm" onclick="document.getElementById('docUpload').click()">+ Upload</button>
       </div>
-      <input type="file" id="docUpload" accept="image/*,.pdf" multiple style="display:none" onchange="handleDocUpload(this)"/>
+      <input type="file" id="docUpload" accept="image/*,.pdf" multiple
+             style="display:none" onchange="handleDocUpload(this)"/>
       <!-- Storage indicator -->
       <div class="mb12" id="storageBar" style="display:none">
-        <div class="flex ic jb txs ts mb4"><span>Local Storage Used</span><span id="storPct"></span></div>
+        <div class="flex ic jb txs ts mb4">
+          <span>Local Storage Used</span>
+          <span id="storPct"></span>
+        </div>
         <div class="stor-bar"><div class="stor-fill" id="storFill"></div></div>
       </div>
       <div id="docsList"></div>
     </div>
- 
+
     <!-- Visit History -->
     <div class="card">
       <h3 class="mb12">Visit History</h3>
       <div id="hpVisits"></div>
     </div>
-  </div>
- 
-  <!-- SETTINGS -->
+
+  </div><!-- /#pg-history -->
+
+
+  <!-- ══════════ MONTHLY REPORT ══════════ -->
+  <div id="pg-report" class="pw" style="display:none">
+    <div class="flex ic jb mb4">
+      <div>
+        <div class="ptitle" id="reportTitle">Monthly Report</div>
+        <div class="psub"   id="reportSubtitle" style="margin-bottom:0">Loading…</div>
+      </div>
+      <div class="flex ic g8">
+        <input type="month" id="reportMonthPicker" class="rpt-month-pick" onchange="renderReport()"/>
+      </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div id="reportKPIs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;margin-top:16px"></div>
+
+    <!-- Summary line -->
+    <div class="card mb12" id="reportSummary"></div>
+
+    <!-- Charts row -->
+    <div class="dash-grid mb14">
+      <div class="card">
+        <h3 class="mb12">Daily Revenue</h3>
+        <div id="reportChart"></div>
+      </div>
+      <div class="card">
+        <h3 class="mb12">Top Services</h3>
+        <div id="reportTopSvcs"></div>
+      </div>
+    </div>
+
+    <!-- Top patients -->
+    <div class="card">
+      <h3 class="mb12">Top Patients This Month</h3>
+      <div id="reportTopPts"></div>
+    </div>
+  </div><!-- /#pg-report -->
+
+
+  <!-- ══════════ SETTINGS ══════════ -->
   <div id="pg-settings" class="pw" style="display:none">
     <div class="ptitle">Settings</div>
-    <div class="psub">Business profile & service pricing</div>
+    <div class="psub">Business profile &amp; service pricing</div>
+
+    <!-- Business & Profile card -->
     <div class="card">
-      <h3 class="mb12">Business & Profile</h3>
+      <h3 class="mb12">Business &amp; Profile</h3>
       <div class="fg">
         <div class="fi"><label>Your Name</label><input id="sName" type="text"/></div>
         <div class="fi"><label>Designation</label><input id="sRank" type="text"/></div>
@@ -428,34 +408,57 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
         <div class="fi s2"><label>Contact / Phone</label><input id="sPh" type="text"/></div>
         <div class="fi s2"><label>Address</label><input id="sAdr" type="text"/></div>
       </div>
-      <!-- Profile photo in settings -->
+
+      <!-- Profile photo -->
       <div class="mt16 flex ic g16">
-        <div class="photo-upload-area" id="settingsAvatar" onclick="document.getElementById('settingsPhotoInput').click()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="photo-upload-area" id="settingsAvatar"
+             onclick="document.getElementById('settingsPhotoInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
           <span class="pu-hint">Tap to upload photo</span>
         </div>
-        <input type="file" id="settingsPhotoInput" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none" onchange="handleSettingsPhoto(this)"/>
-        <div class="tsm ts">Upload your profile photo (.png, .jpg). Stored locally on device — no internet required.</div>
+        <input type="file" id="settingsPhotoInput"
+               accept="image/png,image/jpeg,image/jpg,image/webp"
+               style="display:none"
+               onchange="handleSettingsPhoto(this)"/>
+        <div class="tsm ts">Upload your profile photo (.png, .jpg). Stored locally — no internet required.</div>
       </div>
-      <!-- Logo upload -->
+
+      <!-- Clinic logo -->
       <div class="mt16">
         <label style="font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:8px;display:block">Clinic / Business Logo</label>
         <div class="flex ic g16">
-          <div class="photo-upload-area" id="settingsLogo" onclick="document.getElementById('settingsLogoInput').click()" style="border-radius:12px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="3 9 7 5 11 9 15 5 19 9"/><circle cx="8.5" cy="14.5" r="1.5"/></svg>
+          <div class="photo-upload-area" id="settingsLogo"
+               onclick="document.getElementById('settingsLogoInput').click()"
+               style="border-radius:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <polyline points="3 9 7 5 11 9 15 5 19 9"/>
+              <circle cx="8.5" cy="14.5" r="1.5"/>
+            </svg>
             <span class="pu-hint">Tap to upload logo</span>
           </div>
-          <input type="file" id="settingsLogoInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml" style="display:none" onchange="handleSettingsLogo(this)"/>
-          <div class="tsm ts">Upload your clinic/business logo (.png preferred for transparent bg). Appears on the Welcome screen and on receipts.</div>
+          <input type="file" id="settingsLogoInput"
+                 accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                 style="display:none"
+                 onchange="handleSettingsLogo(this)"/>
+          <div class="tsm ts">Upload your clinic/business logo (.png preferred for transparent bg). Appears on the Welcome screen and receipts.</div>
         </div>
       </div>
+
       <button class="btn bp mt16" onclick="saveSettings()">Save Settings</button>
     </div>
-    <div class="sstit">Services & Pricing <span class="bdg b-blue" id="svcCnt">0</span></div>
+
+    <!-- Services & Pricing -->
+    <div class="sstit">Services &amp; Pricing <span class="bdg b-blue" id="svcCnt">0</span></div>
     <div class="card">
       <div style="overflow-x:auto">
         <table class="tbl">
-          <thead><tr><th>#</th><th>Service Name</th><th>Default Price (Rs.)</th><th></th></tr></thead>
+          <thead>
+            <tr><th>#</th><th>Service Name</th><th>Default Price (Rs.)</th><th></th></tr>
+          </thead>
           <tbody id="svcTblBody"></tbody>
         </table>
       </div>
@@ -467,51 +470,112 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
       </div>
       <button class="btn bp mt16" onclick="addSvc()">Add Service</button>
     </div>
- 
-    <!-- Future online migration note -->
-    <div class="card mt16" style="border:1px solid #bfdbfe;background:#eff6ff">
-      <div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:6px">☁ Ready for Online Migration</div>
-      <div class="tsm" style="color:#3b82f6">All data is stored in clean JSON format in your browser's localStorage. When you're ready to go online, this app can be connected to a cloud database (Firebase, Supabase, or a custom server) with minimal changes. Your patient records, visit history, and documents will migrate seamlessly.</div>
+
+    <!-- Data export -->
+    <div class="card mt16">
+      <div class="flex ic jb">
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">Export Data</div>
+          <div class="tsm ts">Download all visits as a CSV spreadsheet</div>
+        </div>
+        <button class="btn bg bsm" onclick="exportCSV()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
     </div>
-  </div>
- 
+
+    <!-- Supabase status note -->
+    <div class="card mt16" style="border:1px solid #bfdbfe;background:#eff6ff">
+      <div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:6px">☁ Supabase Cloud Sync Active</div>
+      <div class="tsm" style="color:#3b82f6">All patient records, visits, and settings are stored in Supabase under your account. Data syncs in real time across devices. Documents (images/PDFs) are cached locally due to size limits.</div>
+    </div>
+
+  </div><!-- /#pg-settings -->
+
+
+  <!-- ── Bottom Navigation (mobile) ─────── -->
   <nav class="bottomnav">
     <div class="bni">
       <button class="bb on" data-pg="dashboard" onclick="go('dashboard',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
         Dashboard
       </button>
       <button class="bb" data-pg="patients" onclick="go('patients',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
         Patients
       </button>
       <button class="bb" data-pg="addVisit" onclick="go('addVisit',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
         New Visit
       </button>
+      <button class="bb" data-pg="report" onclick="go('report',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Report
+      </button>
       <button class="bb" data-pg="settings" onclick="go('settings',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
         Settings
       </button>
     </div>
   </nav>
-</div>
- 
-<!-- RECEIPT MODAL -->
+
+  <!-- Swipe-back gesture indicator bar -->
+  <div id="swipe-indicator"></div>
+
+</div><!-- /#app -->
+
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Receipt preview modal -->
 <div class="mo" id="rcptModal">
   <div class="mb" style="position:relative">
     <button class="mc" onclick="closeMo('rcptModal')">✕</button>
     <div style="font-size:19px;font-weight:700;margin-bottom:3px">Receipt Preview</div>
     <div class="tsm ts mb16">Review before downloading</div>
     <div id="rcptContent"></div>
-    <div class="flex g12 mt16">
+    <div class="flex g12 mt16" style="flex-wrap:wrap">
       <button class="btn bg bfl" onclick="closeMo('rcptModal')">Close</button>
-      <button class="btn bp bfl" onclick="saveImage()">Save to Device</button>
+      <button class="btn bp bfl" onclick="saveImage()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Save Image
+      </button>
+      <button class="btn btn-wa bfl" onclick="shareWhatsApp()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+        </svg>
+        Share on WhatsApp
+      </button>
     </div>
   </div>
 </div>
- 
-<!-- ADD HISTORY NOTE MODAL -->
+
+<!-- Add / Edit history note modal -->
 <div class="mo" id="histModal">
   <div class="mb" style="position:relative">
     <button class="mc" onclick="closeMo('histModal')">✕</button>
@@ -519,10 +583,16 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     <div class="tsm ts mb16">Enter patient's medical background, conditions, allergies, etc.</div>
     <div class="fg">
       <div class="fi"><label>Date</label><input id="hnDate" type="date"/></div>
-      <div class="fi"><label>Category</label>
+      <div class="fi">
+        <label>Category</label>
         <select id="hnCat">
-          <option>General Note</option><option>Diagnosis</option><option>Allergy</option>
-          <option>Chronic Condition</option><option>Medication</option><option>Lab Result</option><option>Other</option>
+          <option>General Note</option>
+          <option>Diagnosis</option>
+          <option>Allergy</option>
+          <option>Chronic Condition</option>
+          <option>Medication</option>
+          <option>Lab Result</option>
+          <option>Other</option>
         </select>
       </div>
       <div class="fi s2"><label>Title</label><input id="hnTitle" placeholder="e.g. Hypertension diagnosed"/></div>
@@ -534,8 +604,8 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     </div>
   </div>
 </div>
- 
-<!-- DOC PREVIEW MODAL -->
+
+<!-- Document preview modal -->
 <div class="mo" id="docModal">
   <div class="mb" style="position:relative;text-align:center">
     <button class="mc" onclick="closeMo('docModal')">✕</button>
@@ -543,804 +613,189 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
     <div id="docModalContent"></div>
   </div>
 </div>
- 
+
+<!-- Toast notification -->
 <div id="toast"></div>
- 
+
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+     Load order:
+     1. supabase.js  (type=module) — initialises Supabase,
+        sets window.SB / window.auth, drives
+        onAuthStateChange. Runs first per ES module spec.
+     2. All other scripts (defer) — run after DOM parsed,
+        in document order, after the module has executed.
+══════════════════════════════════════ -->
+
+<!-- 1. Supabase (ES module — runs before defer scripts) -->
+<script type="module" src="js/supabase.js"></script>
+
+<!-- 2. App scripts (defer — run after DOM + after module) -->
+<script defer src="js/db.js"></script>
+<script defer src="js/utils.js"></script>
+<script defer src="js/ui.js"></script>
+<script defer src="js/nav.js"></script>
+<script defer src="js/dashboard.js"></script>
+<script defer src="js/patients.js"></script>
+<script defer src="js/history.js"></script>
+<script defer src="js/visits.js"></script>
+<script defer src="js/receipt.js"></script>
+<script defer src="js/report.js"></script>
+<script defer src="js/offline.js"></script>
+<script defer src="js/settings.js"></script>
+<script defer src="js/init.js"></script>
+
+<!-- Third-party: html2canvas for receipt image export -->
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<!-- Service Worker registration -->
 <script>
-// ════════════════════════════════════════
-// DATA LAYER — IndexedDB (async, ~50MB+ storage)
-// Migrations: on first run, copies any existing localStorage data then clears it.
-// ════════════════════════════════════════
-const DB = (() => {
-  const DB_NAME = 'mediassist', DB_VER = 1, STORE = 'kv';
-  let _db = null;
- 
-  function open() {
-    if (_db) return Promise.resolve(_db);
-    return new Promise((res, rej) => {
-      const req = indexedDB.open(DB_NAME, DB_VER);
-      req.onupgradeneeded = e => {
-        e.target.result.createObjectStore(STORE);
-      };
-      req.onsuccess = e => { _db = e.target.result; res(_db); };
-      req.onerror = e => rej(e.target.error);
-    });
-  }
- 
-  async function get(k) {
-    const db = await open();
-    return new Promise((res, rej) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const req = tx.objectStore(STORE).get(k);
-      req.onsuccess = () => res(req.result ?? null);
-      req.onerror = e => rej(e.target.error);
-    });
-  }
- 
-  async function set(k, v) {
-    const db = await open();
-    return new Promise((res, rej) => {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(v, k);
-      tx.oncomplete = () => res(true);
-      tx.onerror = e => rej(e.target.error);
-    });
-  }
- 
-  // Migrate from localStorage on first boot
-  async function migrate() {
-    const KEYS = ['ma_settings','ma_patients','ma_visits','ma_services'];
-    // also migrate any per-patient hist/docs keys
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && (k.startsWith('ma_hist_') || k.startsWith('ma_docs_'))) KEYS.push(k);
-    }
-    const migrated = await get('__migrated__');
-    if (migrated) return;
-    for (const k of KEYS) {
-      try {
-        const raw = localStorage.getItem(k);
-        if (raw) { await set(k, JSON.parse(raw)); localStorage.removeItem(k); }
-      } catch(e) {}
-    }
-    await set('__migrated__', true);
-  }
- 
-  return { get, set, migrate };
-})();
- 
-// Default values
-const DEFAULT_SVC = [{id:1,name:'First Aid',price:300},{id:2,name:'Regular Checkup',price:500},{id:3,name:'Blood Sample Collection',price:400},{id:4,name:'Injection / Drip',price:600},{id:5,name:'Bandage Dressing',price:350},{id:6,name:'BP / Sugar Check',price:200},{id:7,name:'Medicine Delivery',price:100},{id:8,name:'Wound Cleaning',price:300},{id:9,name:'ECG',price:800},{id:10,name:'IV Cannula',price:700}];
-const DEFAULT_SET = {name:'Medical Attendant',rank:'Home Care Professional',businessName:'MediAssist Pro',tagline:'Your Mobile Medical Companion',phone:'',address:'',photo:'',logo:''};
- 
-async function gSet(){return (await DB.get('ma_settings')) || DEFAULT_SET;}
-async function gPts(){return (await DB.get('ma_patients')) || [];}
-async function gVis(){return (await DB.get('ma_visits')) || [];}
-async function gSvc(){return (await DB.get('ma_services')) || DEFAULT_SVC;}
-async function gHistNotes(pid){return (await DB.get('ma_hist_'+pid)) || [];}
-async function gDocs(pid){return (await DB.get('ma_docs_'+pid)) || [];}
- 
-let selSvcs = {};   // {id: price}
-let activePtId = null;
-let editingHistNoteId = null;
-let historyPatientId = null;
- 
-// ════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════
-window.addEventListener('load', async () => {
-  try {
-    await DB.migrate();
-    const existing = await DB.get('ma_services');
-    if (!existing) await DB.set('ma_services', DEFAULT_SVC);
-    const s = await gSet();
-
-    // Populate welcome screen display elements
-    document.getElementById('wTagline').textContent = s.tagline || 'Your Mobile Medical Companion';
-    document.getElementById('wDisplayName').textContent = s.name || 'Your Name';
-    document.getElementById('wDisplayRank').textContent = s.rank || 'Rank / Designation';
-
-    // Logo (upper-left)
-    if(s.logo){
-      document.getElementById('wLogoWrap').innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;padding:4px"/>`;
-    }
-    // Subject / profile photo (center)
-    if(s.photo){
-      document.getElementById('wSubjectWrap').innerHTML=`<img src="${s.photo}" class="wsubject-img"/>`;
-    }
-
-    // Keep hidden compat inputs populated for saveProfile()
-    document.getElementById('iName').value = s.name || '';
-    document.getElementById('iRank').value = s.rank || '';
-    updateWelcomeInitials();
-
-    const now = new Date();
-    document.getElementById('fDate').valueAsDate = now;
-    document.getElementById('fTime').value = now.toTimeString().slice(0, 5);
-  } catch(err) {
-    console.error('Init error:', err);
-  } finally {
-    // Always hide spinner and reveal card, even if init partially fails
-    document.getElementById('wsSpinner').style.display = 'none';
-    document.getElementById('wsCard').classList.add('wcard-ready');
-  }
-});
- 
-// ════════════════════════════════════════
-// WELCOME
-// ════════════════════════════════════════
-function getInits(name){if(!name)return'MA';return name.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
-function updateWelcomeInitials(){
-  const n = document.getElementById('iName').value;
-  const el = document.getElementById('wInitials');
-  if(el && el.tagName!=='IMG') el.textContent = getInits(n);
-}
-function setWelcomePhoto(b64){
-  const wrap = document.getElementById('wSubjectWrap');
-  if(wrap) wrap.innerHTML = `<img src="${b64}" class="wsubject-img"/>`;
-}
-function handleWelcomePhoto(input){
-  const file = input.files[0]; if(!file) return;
-  const r = new FileReader();
-  r.onload = async e=>{
-    const b64 = e.target.result;
-    setWelcomePhoto(b64);
-    const s=await gSet(); s.photo=b64; await DB.set('ma_settings',s);
-  };
-  r.readAsDataURL(file);
-}
-async function saveProfile(){
-  const s=await gSet();
-  s.name=document.getElementById('iName').value.trim()||s.name;
-  s.rank=document.getElementById('iRank').value.trim()||s.rank;
-  await DB.set('ma_settings',s); toast('Profile saved!');
-}
-async function enterApp(){
-  await saveProfile();
-  document.getElementById('ws').style.display='none';
-  document.getElementById('app').classList.add('active');
-  go('dashboard',null);
-}
-function logout(){
-  document.getElementById('app').classList.remove('active');
-  document.getElementById('ws').style.display=''; document.getElementById('ws').classList.add('active');
-}
- 
-// ════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════
-const pages = ['dashboard','patients','addVisit','history','settings'];
-function go(pg, btn){
-  pages.forEach(p=>{
-    const el=document.getElementById('pg-'+p);
-    if(el) el.style.display = p===pg?'':'none';
-  });
-  document.querySelectorAll('.nbtn[data-pg],.bb[data-pg]').forEach(b=>b.classList.toggle('on', b.dataset.pg===pg));
-  if(pg==='dashboard') renderDash();
-  if(pg==='patients') renderPatients();
-  if(pg==='addVisit') renderSvcTags();
-  if(pg==='settings') renderSettings();
-}
- 
-// ════════════════════════════════════════
-// DASHBOARD
-// ════════════════════════════════════════
-async function renderDash(){
-  const pts=await gPts(), vis=await gVis();
-  const tod=new Date().toISOString().slice(0,10);
-  const todV=vis.filter(v=>v.date===tod);
-  const totRev=vis.reduce((s,v)=>s+(v.net||0),0);
-  const todRev=todV.reduce((s,v)=>s+(v.net||0),0);
-  const s=await gSet();
-  const now=new Date(), h=now.getHours();
-  document.getElementById('dashGreet').textContent=`Good ${h<12?'Morning':h<17?'Afternoon':'Evening'}, ${s.name.split(' ')[0]||'Doctor'}!`;
-  document.getElementById('dashDate').textContent=now.toLocaleDateString('en-PK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('statsGrid').innerHTML=`
-    <div class="scard"><div class="sv">${pts.length}</div><div class="sl">Total Patients</div></div>
-    <div class="scard"><div class="sv">${vis.length}</div><div class="sl">Total Visits</div></div>
-    <div class="scard"><div class="sv">${todV.length}</div><div class="sl">Today's Visits</div></div>
-    <div class="scard"><div class="sv" style="color:var(--ok)">Rs.${todRev.toLocaleString()}</div><div class="sl">Today's Earnings</div></div>
-    <div class="scard"><div class="sv" style="color:var(--ok)">Rs.${totRev.toLocaleString()}</div><div class="sl">Total Earnings</div></div>`;
-  const rec=[...vis].sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,6);
-  document.getElementById('recentVisits').innerHTML = rec.length ? rec.map(v=>`
-    <div class="hi" style="cursor:pointer" onclick="openHistory('${v.patientId}')">
-      <div class="hd">${fmtDate(v.date)} ${v.time||''}</div>
-      <div class="hs">${v.patientName}</div>
-      <div class="hn">${v.services.map(s=>s.name).join(', ')}</div>
-      <div class="ha">Rs. ${(v.net||0).toLocaleString()}</div>
-    </div>`).join('') :
-    `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>No visits yet</p><span>Add your first patient visit</span></div>`;
-}
- 
-// ════════════════════════════════════════
-// PATIENTS
-// ════════════════════════════════════════
-async function renderPatients(){
-  const q=(document.getElementById('pSearch')?.value||'').toLowerCase();
-  let pts=await gPts(); if(q) pts=pts.filter(p=>p.name.toLowerCase().includes(q)||(p.phone||'').includes(q)||(p.address||'').toLowerCase().includes(q));
-  const vis=await gVis(); const el=document.getElementById('patientsList');
-  if(!pts.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>${q?'No patients found':'No patients yet'}</p><span>${q?'Try a different search':'Add a new visit to create a patient record'}</span></div>`;return;}
-  el.innerHTML=pts.map(p=>{
-    const pvs=vis.filter(v=>v.patientId===p.id);
-    const last=pvs.sort((a,b)=>b.date.localeCompare(a.date))[0];
-    const av = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : getInits(p.name);
-    return `<div class="pc" onclick="openHistory('${p.id}')">
-      <div class="av ${p.gender==='Female'?'f':p.age<18?'c':''}">${av}</div>
-      <div class="pi">
-        <div class="pn">${p.name}</div>
-        <div class="pm">${p.age?p.age+' yrs':''} ${p.age&&p.gender?'·':''} ${p.gender||''} ${p.phone?'· '+p.phone:''}</div>
-        ${last?`<div class="txs ts mt4">Last visit: ${fmtDate(last.date)}</div>`:''}
-      </div>
-      <div class="pst"><div class="vc">${pvs.length}</div><div class="vl">visit${pvs.length!==1?'s':''}</div></div>
-    </div>`;
-  }).join('');
-}
- 
-// ════════════════════════════════════════
-// HISTORY PAGE
-// ════════════════════════════════════════
-async function openHistory(pid){
-  historyPatientId = pid;
-  const p=(await gPts()).find(x=>x.id===pid); if(!p) return;
-  const vis=(await gVis()).filter(v=>v.patientId===pid).sort((a,b)=>b.date.localeCompare(a.date));
-  const total=vis.reduce((s,v)=>s+(v.net||0),0);
- 
-  document.getElementById('hpName').textContent = p.name;
-  document.getElementById('hpMeta').textContent = [p.age?p.age+' yrs':'', p.gender, p.phone, p.address].filter(Boolean).join(' · ');
-  document.getElementById('hpFullName').textContent = p.name;
-  document.getElementById('hpDetails').textContent = [p.age?p.age+' years old':'', p.gender, p.phone].filter(Boolean).join(' · ');
-  if(p.address) document.getElementById('hpDetails').textContent += ' · ' + p.address;
- 
-  // Avatar
-  const hpAv = document.getElementById('hpAv');
-  if(p.photo){
-    hpAv.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-  } else {
-    hpAv.innerHTML = `<span style="font-size:22px;font-weight:700;color:var(--p)">${getInits(p.name)}</span><div class="wpa-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
-    hpAv.onmouseenter = ()=>hpAv.querySelector('.wpa-overlay').style.opacity=1;
-    hpAv.onmouseleave = ()=>hpAv.querySelector('.wpa-overlay').style.opacity=0;
-  }
- 
-  document.getElementById('hpStats').innerHTML = `
-    <div class="scard"><div class="sv" style="font-size:20px">${vis.length}</div><div class="sl">Visits</div></div>
-    <div class="scard"><div class="sv" style="font-size:16px;color:var(--ok)">Rs.${total.toLocaleString()}</div><div class="sl">Total Billed</div></div>
-    <div class="scard"><div class="sv" style="font-size:14px">${vis[0]?fmtDate(vis[0].date):'—'}</div><div class="sl">Last Visit</div></div>`;
- 
-  renderHistNotes();
-  renderDocs();
-  renderPatientVisits(vis);
-  updateStorageBar(pid);
- 
-  // Action button for new visit
-// Remove existing button if already present
-let btn = document.getElementById('newVisitBtn');
- 
-if (!btn) {
-  btn = document.createElement('button');
-  btn.id = "newVisitBtn";
-  btn.className = "btn bp bsm mt12";
-  document.getElementById('hpStats').after(btn);
-}
- 
-btn.textContent = "+ New Visit for this Patient";
-btn.onclick = () => prefillPt(pid);
- 
-  go('history', null);
-}
- 
-async function renderHistNotes(){
-  const notes = (await gHistNotes(historyPatientId)).sort((a,b)=>b.date.localeCompare(a.date));
-  const el = document.getElementById('histNotes');
-  if(!notes.length){ el.innerHTML=`<div class="empty" style="padding:16px 0"><p style="font-size:14px">No history notes yet</p><span>Add diagnoses, allergies, conditions…</span></div>`; return; }
-  const catColors = {'Diagnosis':'b-red','Allergy':'b-amber','Chronic Condition':'b-red','Medication':'b-blue','Lab Result':'b-green','General Note':'b-gray','Other':'b-gray'};
-  el.innerHTML = notes.map(n=>`
-    <div class="hi" style="position:relative">
-      <div class="flex ic jb mb4">
-        <span class="bdg ${catColors[n.category]||'b-gray'}">${n.category}</span>
-        <div class="flex ic g8">
-          <span class="txs ts">${fmtDate(n.date)}</span>
-          <button onclick="editHistNote('${n.id}')" class="btn bg bsm" style="padding:3px 8px;font-size:12px">Edit</button>
-          <button onclick="delHistNote('${n.id}')" class="sdel">✕</button>
-        </div>
-      </div>
-      <div class="hs">${n.title}</div>
-      ${n.details?`<div class="hn">${n.details}</div>`:''}
-    </div>`).join('');
-}
- 
-function showAddHistNote(){
-  editingHistNoteId = null;
-  document.getElementById('histModalTitle').textContent = 'Add Medical History Note';
-  document.getElementById('hnDate').value = new Date().toISOString().slice(0,10);
-  document.getElementById('hnCat').value = 'General Note';
-  document.getElementById('hnTitle').value = '';
-  document.getElementById('hnDetails').value = '';
-  openMo('histModal');
-}
-async function editHistNote(id){
-  const notes = await gHistNotes(historyPatientId);
-  const n = notes.find(x=>x.id===id); if(!n) return;
-  editingHistNoteId = id;
-  document.getElementById('histModalTitle').textContent = 'Edit History Note';
-  document.getElementById('hnDate').value = n.date;
-  document.getElementById('hnCat').value = n.category;
-  document.getElementById('hnTitle').value = n.title;
-  document.getElementById('hnDetails').value = n.details||'';
-  openMo('histModal');
-}
-async function saveHistNote(){
-  const title = document.getElementById('hnTitle').value.trim();
-  if(!title){ toast('Enter a title','danger'); return; }
-  const notes = await gHistNotes(historyPatientId);
-  const note = {
-    id: editingHistNoteId || 'hn_'+Date.now(),
-    date: document.getElementById('hnDate').value,
-    category: document.getElementById('hnCat').value,
-    title, details: document.getElementById('hnDetails').value.trim()
-  };
-  if(editingHistNoteId){ const i=notes.findIndex(x=>x.id===editingHistNoteId); if(i>-1) notes[i]=note; }
-  else notes.push(note);
-  await DB.set('ma_hist_'+historyPatientId, notes);
-  closeMo('histModal'); renderHistNotes(); toast('Note saved!');
-}
-async function delHistNote(id){
-  if(!confirm('Delete this note?')) return;
-  const notes = (await gHistNotes(historyPatientId)).filter(n=>n.id!==id);
-  await DB.set('ma_hist_'+historyPatientId, notes); renderHistNotes(); toast('Note deleted');
-}
- 
-// DOCUMENTS
-async function handleDocUpload(input){
-  const files = Array.from(input.files); if(!files.length) return;
-  let done = 0;
-  for(const file of files){
-    if(file.size > 10*1024*1024){ toast('File too large (max 10MB): '+file.name,'danger'); done++; continue; }
-    await new Promise(resolve=>{
-      const r = new FileReader();
-      r.onload = async e=>{
-        const currentDocs = await gDocs(historyPatientId);
-        await DB.set('ma_docs_'+historyPatientId, [...currentDocs, {
-          id:'doc_'+Date.now()+'_'+Math.random().toString(36).slice(2),
-          name: file.name, type: file.type, size: file.size,
-          data: e.target.result, uploadedAt: new Date().toISOString()
-        }]);
-        done++;
-        resolve();
-      };
-      r.onerror = ()=>{ done++; toast('Failed to read '+file.name,'danger'); resolve(); };
-      r.readAsDataURL(file);
-    });
-  }
-  renderDocs(); updateStorageBar(historyPatientId); input.value='';
-  toast(done > 1 ? done+' documents uploaded!' : 'Document uploaded!');
-}
-async function renderDocs(){
-  const docs = await gDocs(historyPatientId);
-  const el = document.getElementById('docsList');
-  if(!docs.length){ el.innerHTML=`<div class="empty" style="padding:12px 0"><p style="font-size:14px">No documents yet</p><span>Upload medical reports, images, prescriptions…</span></div>`; return; }
-  el.innerHTML = docs.map(d=>{
-    const isImg = d.type.startsWith('image/');
-    const icon = isImg
-      ? `<img src="${d.data}" class="doc-thumb" alt="${d.name}"/>`
-      : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-    return `<div class="doc-card mb8">
-      <div class="doc-icon">${icon}</div>
-      <div class="doc-info">
-        <div class="doc-name">${d.name}</div>
-        <div class="doc-meta">${fmtFileSize(d.size)} · ${fmtDate(d.uploadedAt?.slice(0,10)||'')}</div>
-      </div>
-      <button class="btn bg bsm" style="flex-shrink:0;padding:5px 10px;font-size:12px" onclick="previewDoc('${d.id}')">View</button>
-      <button class="doc-del" onclick="delDoc('${d.id}')">✕</button>
-    </div>`;
-  }).join('');
-}
-async function delDoc(id){
-  if(!confirm('Delete this document?')) return;
-  const docs = (await gDocs(historyPatientId)).filter(d=>d.id!==id);
-  await DB.set('ma_docs_'+historyPatientId, docs); renderDocs(); updateStorageBar(historyPatientId); toast('Deleted');
-}
-async function previewDoc(id){
-  const d = (await gDocs(historyPatientId)).find(x=>x.id===id); if(!d) return;
-  document.getElementById('docModalName').textContent = d.name;
-  const isImg = d.type.startsWith('image/');
-  if(isImg){
-    document.getElementById('docModalContent').innerHTML = `<img src="${d.data}" style="max-width:100%;border-radius:var(--rs)"/>`;
-  } else {
-    document.getElementById('docModalContent').innerHTML = `<p class="ts tsm mb12">PDF preview not available inline.</p><a href="${d.data}" download="${d.name}" class="btn bp">Download PDF</a>`;
-  }
-  openMo('docModal');
-}
-function fmtFileSize(b){if(b<1024)return b+'B';if(b<1024*1024)return(b/1024).toFixed(1)+'KB';return(b/1024/1024).toFixed(1)+'MB';}
- 
-async function updateStorageBar(pid){
-  const el = document.getElementById('storageBar');
-  el.style.display = 'block';
-  // Use StorageManager API if available for accurate IDB usage
-  if (navigator.storage && navigator.storage.estimate) {
-    const {usage, quota} = await navigator.storage.estimate();
-    const pct = Math.min(100, Math.round((usage||0)/(quota||1)*100));
-    const usedMB = ((usage||0)/1024/1024).toFixed(1);
-    const quotaMB = Math.round((quota||0)/1024/1024);
-    document.getElementById('storPct').textContent = usedMB+'MB of ~'+quotaMB+'MB used ('+pct+'%)';
-    const fill = document.getElementById('storFill');
-    fill.style.width = pct+'%';
-    fill.className = 'stor-fill'+(pct>85?' danger':pct>65?' warn':'');
-  } else {
-    document.getElementById('storPct').textContent = 'Storage: IndexedDB (large capacity)';
-    document.getElementById('storFill').style.width = '2%';
-    document.getElementById('storFill').className = 'stor-fill';
-  }
-}
- 
-function renderPatientVisits(vis){
-  const el = document.getElementById('hpVisits');
-  if(!vis.length){ el.innerHTML=`<div class="empty" style="padding:16px 0"><p style="font-size:14px">No visits yet</p></div>`; return; }
-  el.innerHTML = vis.map(v=>`
-    <div class="hi">
-      <div class="flex ic jb">
-        <div class="hd">${fmtDate(v.date)} ${v.time||''}</div>
-        <button class="btn bg bsm" style="padding:4px 10px;font-size:12px" onclick="previewReceipt('${v.id}')">Receipt</button>
-      </div>
-      <div class="hs">${v.services.map(s=>s.name).join(', ')}</div>
-      ${v.notes?`<div class="hn">${v.notes}</div>`:''}
-      <div class="ha">Rs. ${(v.net||0).toLocaleString()}</div>
-    </div>`).join('');
-}
- 
-// PATIENT PHOTO in history page
-function handlePatientPhoto(input){
-  const file=input.files[0]; if(!file) return;
-  const r=new FileReader();
-  r.onload=async e=>{
-    const pts=await gPts(), p=pts.find(x=>x.id===historyPatientId);
-    if(!p) return;
-    p.photo=e.target.result;
-    await DB.set('ma_patients',pts);
-    // Re-read to confirm persistence, then update avatar
-    const confirmedPts=await gPts(), confirmedP=confirmedPts.find(x=>x.id===historyPatientId);
-    const hpAv=document.getElementById('hpAv');
-    if(confirmedP && confirmedP.photo){
-      hpAv.innerHTML=`<img src="${confirmedP.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    }
-    input.value='';
-    toast('Photo updated!');
-  };
-  r.readAsDataURL(file);
-}
- 
-// ════════════════════════════════════════
-// ADD VISIT
-// ════════════════════════════════════════
-async function renderSvcTags(){
-  const svcs=await gSvc();
-  document.getElementById('svcTags').innerHTML=svcs.map(s=>`
-    <div class="stag ${selSvcs[s.id]!==undefined?'sel':''}" onclick="togSvc(${s.id})" id="st-${s.id}">${s.name} <span style="opacity:.7">Rs.${s.price}</span></div>`).join('');
-  renderSvcTable();
-}
-async function togSvc(id){
-  const svcs=await gSvc(); const s=svcs.find(x=>x.id===id); if(!s) return;
-  if(selSvcs[id]!==undefined) delete selSvcs[id]; else selSvcs[id]=s.price;
-  document.getElementById('st-'+id)?.classList.toggle('sel', selSvcs[id]!==undefined);
-  renderSvcTable(); calcTotal();
-}
-async function renderSvcTable(){
-  const keys=Object.keys(selSvcs); const el=document.getElementById('svcTable');
-  if(!keys.length){el.innerHTML='';return;}
-  const svcs=await gSvc();
-  el.innerHTML=`<table class="tbl"><thead><tr><th>Service</th><th>Price (Rs.)</th></tr></thead><tbody>
-    ${keys.map(id=>{const s=svcs.find(x=>x.id==id);return`<tr><td>${s?s.name:'Service'}</td><td><input type="number" value="${selSvcs[id]}" style="width:100px" oninput="selSvcs[${id}]=+this.value;calcTotal()"/></td></tr>`;}).join('')}
-  </tbody></table>`;
-}
-function calcTotal(){
-  const sub=Object.values(selSvcs).reduce((a,b)=>a+(+b||0),0);
-  const disc=+(document.getElementById('fDisc')?.value||0);
-  document.getElementById('vTotal').textContent='Rs. '+sub.toLocaleString();
-  document.getElementById('vNet').textContent='Rs. '+Math.max(0,sub-disc).toLocaleString();
-}
-async function suggestPt(){
-  const q=document.getElementById('fName').value.toLowerCase().trim(); const el=document.getElementById('ptSugg');
-  if(q.length<2){el.style.display='none';return;}
-  const m=(await gPts()).filter(p=>p.name.toLowerCase().includes(q)).slice(0,5);
-  if(!m.length){el.style.display='none';return;}
-  el.style.display='block';
-  el.innerHTML=m.map(p=>`<div onclick="prefillPt('${p.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bd);font-size:14px"><strong>${p.name}</strong> <span class="ts">${p.age?p.age+' yrs':''} ${p.phone?'· '+p.phone:''}</span></div>`).join('');
-}
-document.addEventListener('click',e=>{if(!e.target.closest('#ptSugg')&&e.target.id!=='fName') document.getElementById('ptSugg').style.display='none';});
- 
-async function prefillPt(id){
-  //closeMo('patientModal');
-  activePtId=id;
-  const p=(await gPts()).find(x=>x.id===id); if(!p) return;
-  go('addVisit',null);
-  setTimeout(()=>{
-    document.getElementById('fName').value=p.name;
-    document.getElementById('fAge').value=p.age||'';
-    document.getElementById('fGender').value=p.gender||'';
-    document.getElementById('fPhone').value=p.phone||'';
-    document.getElementById('fAddr').value=p.address||'';
-    const b=document.getElementById('existingBanner');
-    b.style.display='block';
-    b.innerHTML=`<strong>${p.name}</strong> — existing patient selected. Details pre-filled.`;
-  },60);
-}
-function resetForm(){
-  ['fName','fAge','fPhone','fAddr','fNotes','fDisc'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fGender').value='';
-  const now=new Date(); document.getElementById('fDate').valueAsDate=now;
-  document.getElementById('fTime').value=now.toTimeString().slice(0,5);
-  selSvcs={}; activePtId=null;
-  document.getElementById('existingBanner').style.display='none';
-  renderSvcTags(); calcTotal();
-}
-async function saveVisit(){
-  const name=document.getElementById('fName').value.trim();
-  if(!name){toast('Patient name is required','danger');return;}
-  if(!Object.keys(selSvcs).length){toast('Select at least one service','danger');return;}
-  const pts=await gPts(), vis=await gVis(), svcs=await gSvc();
-  let pt;
-  if(activePtId) pt=pts.find(p=>p.id===activePtId);
-  if(!pt) pt=pts.find(p=>p.name.toLowerCase()===name.toLowerCase());
-  if(!pt){
-    pt={id:'p_'+Date.now(),name,age:+document.getElementById('fAge').value||null,gender:document.getElementById('fGender').value,phone:document.getElementById('fPhone').value.trim(),address:document.getElementById('fAddr').value.trim(),createdAt:new Date().toISOString()};
-    pts.push(pt);
-  } else {
-    pt.age=+document.getElementById('fAge').value||pt.age;
-    pt.gender=document.getElementById('fGender').value||pt.gender;
-    pt.phone=document.getElementById('fPhone').value.trim()||pt.phone;
-    pt.address=document.getElementById('fAddr').value.trim()||pt.address;
-  }
-  await DB.set('ma_patients',pts);
-  const sub=Object.values(selSvcs).reduce((a,b)=>a+(+b||0),0);
-  const disc=+(document.getElementById('fDisc').value||0);
-  const v={id:'v_'+Date.now(),patientId:pt.id,patientName:pt.name,
-    date:document.getElementById('fDate').value,time:document.getElementById('fTime').value,
-    notes:document.getElementById('fNotes').value.trim(),
-    services:Object.keys(selSvcs).map(id=>{const s=svcs.find(x=>x.id==id);return{id:+id,name:s?s.name:'Service',price:+selSvcs[id]};}),
-    subtotal:sub,discount:disc,net:Math.max(0,sub-disc),createdAt:new Date().toISOString()};
-  vis.push(v); await DB.set('ma_visits',vis);
-  toast('Visit saved!'); previewReceipt(v.id); resetForm();
-}
- 
-// ════════════════════════════════════════
-// RECEIPT
-// ════════════════════════════════════════
-async function buildReceipt(vid){
-  const v=(await gVis()).find(x=>x.id===vid); if(!v) return '<p>Not found</p>';
-  const p=(await gPts()).find(x=>x.id===v.patientId)||{}, s=await gSet();
-  const rno=vid.replace('v_','').slice(-6);
-  return `<div class="rw" id="r-${vid}">
-    <div class="rh">
-      <div style="display:flex;align-items:flex-start;gap:10px">
-        ${s.logo?`<img src="${s.logo}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;flex-shrink:0;border:1px solid var(--bd);padding:2px"/>`:''}
-        <div>
-          <div class="rb">${s.businessName||'MediAssist Pro'}<span>${s.tagline||'Home Medical Care'}</span></div>
-          <div style="font-size:13px;color:var(--tx2);margin-top:5px">${s.name} · ${s.rank}</div>
-          ${s.phone?`<div style="font-size:12px;color:var(--tx3)">${s.phone}</div>`:''}
-          ${s.address?`<div style="font-size:12px;color:var(--tx3)">${s.address}</div>`:''}
-        </div>
-      </div>
-      <div class="rm"><div style="font-weight:700;font-size:14px">RECEIPT</div><div>#${rno}</div><div>${fmtDate(v.date)}</div><div>${v.time||''}</div></div>
-    </div>
-    <div class="rp"><strong>${p.name||v.patientName}</strong>
-      ${[p.age?p.age+' yrs':'',p.gender,p.phone].filter(Boolean).join(' · ')}
-      ${p.address?`<div style="font-size:12px;color:var(--tx2)">${p.address}</div>`:''}
-    </div>
-    ${v.notes?`<div style="font-size:13px;color:var(--tx2);margin-bottom:10px"><strong>Notes:</strong> ${v.notes}</div>`:''}
-    <table class="rtbl"><thead><tr><th>#</th><th>Service</th><th style="text-align:right">Rs.</th></tr></thead>
-      <tbody>${v.services.map((s,i)=>`<tr><td>${i+1}</td><td>${s.name}</td><td style="text-align:right">${(s.price||0).toLocaleString()}</td></tr>`).join('')}</tbody>
-    </table>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-bottom:9px;font-size:14px">
-      <div>Subtotal: <strong>Rs. ${(v.subtotal||0).toLocaleString()}</strong></div>
-      ${v.discount?`<div style="color:var(--err)">Discount: - Rs. ${v.discount.toLocaleString()}</div>`:''}
-    </div>
-    <div class="rtot"><span>Total Payable</span><span style="color:var(--ok)">Rs. ${(v.net||0).toLocaleString()}</span></div>
-    <div class="rfoot">Thank you for trusting us with your care. Get well soon!<br>Generated by MediAssist Pro</div>
-  </div>`;
-}
-async function previewReceipt(vid){
-  document.getElementById('rcptContent').innerHTML = await buildReceipt(vid);
-  document.getElementById('rcptContent').dataset.vid=vid;
-  openMo('rcptModal');
-}
-/* Removed pdf function completely and going to use simple image export via html2canvas for now.
-  async function dlPDF(){
-  const vid=document.getElementById('rcptContent').dataset.vid;
-  const v=(await gVis()).find(x=>x.id===vid);
-  if(!v){ toast('Visit not found','danger'); return; }
-  const p=(await gPts()).find(x=>x.id===v.patientId)||{};
-  const s=await gSet();
- 
-  // ── Page setup: A5 portrait (420 × 595 pt) ──
-  const W=420, H=595, ml=30, mr=W-30, cw=W-60;
- 
-  // PDF stream helpers
-  // Use Tm (text matrix) for absolute positioning — avoids the Td accumulation bug
-  const st=[];
-  function esc(t){ return String(t==null?'':t).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
-  function txt(t, x, y, sz, bold=false){
-    // PDF y-axis is bottom-up; we pass top-down y so convert: pdfY = H - y
-    st.push(`BT /${bold?'Fb':'F'} ${sz} Tf ${x} ${(H-y).toFixed(2)} Tm (${esc(t)}) Tj ET`);
-  }
-  function fillRect(x,y,w,h, r,g,b){
-    // y is top-down top of rect; PDF rect uses bottom-left corner
-    st.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`);
-    st.push(`${x} ${(H-y-h).toFixed(2)} ${w} ${h} re f`);
-    st.push(`0 0 0 rg`); // reset to black
-  }
-  function hline(x1,y,x2){
-    st.push(`0.5 w 0.78 0.82 0.88 RG ${x1} ${(H-y).toFixed(2)} m ${x2} ${(H-y).toFixed(2)} l S 0 0 0 RG`);
-  }
-  function col(r,g,b){ st.push(`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)} rg`); }
-  function resetCol(){ st.push(`0 0 0 rg`); } */
- 
-// SAVE RECIPT TO DEVICE AS IMAGE 
-async function saveImage(){
-  const el = document.getElementById('rcptContent');
- 
-  const canvas = await html2canvas(el, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff"
-  });
- 
-  canvas.toBlob(function(blob){
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "Receipt_" + Date.now() + ".jpg";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('Receipt saved to device!');
-  }, "image/jpeg", 0.95);
-}
-// ════════════════════════════════════════
-// SETTINGS
-// ════════════════════════════════════════
-async function renderSettings(){
-  const s=await gSet();
-  document.getElementById('sName').value=s.name||'';
-  document.getElementById('sRank').value=s.rank||'';
-  document.getElementById('sBiz').value=s.businessName||'';
-  document.getElementById('sTag').value=s.tagline||'';
-  document.getElementById('sPh').value=s.phone||'';
-  document.getElementById('sAdr').value=s.address||'';
-  const sAv=document.getElementById('settingsAvatar');
-  if(s.photo){
-    sAv.innerHTML=`<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-  } else {
-    sAv.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="pu-hint">Tap to upload photo</span>`;
-  }
-  const sLogo=document.getElementById('settingsLogo');
-  if(s.logo){
-    sLogo.innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
-  } else {
-    sLogo.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="3 9 7 5 11 9 15 5 19 9"/><circle cx="8.5" cy="14.5" r="1.5"/></svg><span class="pu-hint">Tap to upload logo</span>`;
-  }
-  renderSvcSettings();
-}
-function handleSettingsPhoto(input){
-  const file=input.files[0]; if(!file) return;
-  const r=new FileReader();
-  r.onload=async e=>{
-    const s=await gSet(); s.photo=e.target.result; await DB.set('ma_settings',s);
-    const sAv=document.getElementById('settingsAvatar');
-    sAv.innerHTML=`<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    // Also update welcome screen subject photo
-    setWelcomePhoto(s.photo);
-    toast('Photo saved!');
-  };
-  r.readAsDataURL(file);
-}
-function handleSettingsLogo(input){
-  const file=input.files[0]; if(!file) return;
-  const r=new FileReader();
-  r.onload=async e=>{
-    const s=await gSet(); s.logo=e.target.result; await DB.set('ma_settings',s);
-    const sLogo=document.getElementById('settingsLogo');
-    sLogo.innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;padding:4px"/>`;
-    // Also update welcome screen logo
-    document.getElementById('wLogoWrap').innerHTML=`<img src="${s.logo}" style="width:100%;height:100%;object-fit:contain;padding:4px"/>`;
-    toast('Logo saved!');
-  };
-  r.readAsDataURL(file);
-}
-async function saveSettings(){
-  const cur=await gSet();
-  await DB.set('ma_settings',{
-    name:document.getElementById('sName').value.trim(),
-    rank:document.getElementById('sRank').value.trim(),
-    businessName:document.getElementById('sBiz').value.trim(),
-    tagline:document.getElementById('sTag').value.trim(),
-    phone:document.getElementById('sPh').value.trim(),
-    address:document.getElementById('sAdr').value.trim(),
-    photo:cur.photo||'',
-    logo:cur.logo||''
-  });
-  // Refresh welcome screen display fields live
-  const s=await gSet();
-  document.getElementById('wDisplayName').textContent=s.name||'Your Name';
-  document.getElementById('wDisplayRank').textContent=s.rank||'Rank / Designation';
-  document.getElementById('wTagline').textContent=s.tagline||'Your Mobile Medical Companion';
-  document.getElementById('iName').value=s.name||'';
-  document.getElementById('iRank').value=s.rank||'';
-  toast('Settings saved!');
-}
-async function renderSvcSettings(){
-  const svcs=(await gSvc()).sort((a,b)=>a.name.localeCompare(b.name));
-  document.getElementById('svcCnt').textContent=svcs.length;
-  document.getElementById('svcTblBody').innerHTML=svcs.map((s,i)=>`
-    <tr>
-      <td class="ts">${i+1}</td>
-      <td><input value="${s.name}" oninput="updSvc(${s.id},'name',this.value)" style="border:none;background:transparent;width:100%;font-weight:600;padding:0;font-size:14px"/></td>
-      <td><input type="number" value="${s.price}" oninput="updSvc(${s.id},'price',+this.value)" style="border:1px solid var(--bd);border-radius:6px;width:90px;padding:5px 8px;font-size:14px"/></td>
-      <td><button class="sdel" onclick="delSvc(${s.id})">✕</button></td>
-    </tr>`).join('');
-}
-async function updSvc(id,f,v){
-  const svcs=await gSvc(), s=svcs.find(x=>x.id===id);
-  if(s){ s[f]=v; await DB.set('ma_services',svcs); }
-}
-async function delSvc(id){
-  if(!confirm('Remove this service?'))return;
-  await DB.set('ma_services',(await gSvc()).filter(s=>s.id!==id));
-  renderSvcSettings(); toast('Removed');
-}
-async function addSvc(){
-  const n=document.getElementById('nSvcName').value.trim(); if(!n){toast('Enter a name','danger');return;}
-  const svcs=await gSvc(); const nid=Math.max(...svcs.map(s=>s.id),0)+1;
-  svcs.push({id:nid,name:n,price:+(document.getElementById('nSvcPrice').value)||0});
-  await DB.set('ma_services',svcs);
-  document.getElementById('nSvcName').value=''; document.getElementById('nSvcPrice').value='';
-  renderSvcSettings(); toast('Service added!');
-}
- 
-// ════════════════════════════════════════
-// MODALS
-// ════════════════════════════════════════
-function openMo(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
-function closeMo(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
-document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeMo(m.id);}));
- 
-// ════════════════════════════════════════
-// UTILS
-// ════════════════════════════════════════
-function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${+day} ${mo[+m-1]} ${y}`;}
-let tt;
-function toast(msg,t='ok'){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.style.background=t==='danger'?'#ef4444':'#1a2332'; el.style.opacity=1;
-  clearTimeout(tt); tt=setTimeout(()=>el.style.opacity=0,2600);
-}
-</script>
-  <script>
 if ('serviceWorker' in navigator) {
   let newWorker;
- 
   navigator.serviceWorker.register('./sw.js').then(reg => {
- 
     reg.addEventListener('updatefound', () => {
       newWorker = reg.installing;
- 
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdatePopup();
+          const update = confirm('New update available. Update now?');
+          if (update && newWorker) newWorker.postMessage('SKIP_WAITING');
         }
       });
     });
   });
- 
-  function showUpdatePopup() {
-    const update = confirm("New update available. Update now?");
-    if (update && newWorker) {
-      newWorker.postMessage('SKIP_WAITING');
-    }
-  }
- 
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
-  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
 }
 </script>
+
+<!-- ══════════════════════════════════════
+     MICRO-INTERACTIONS & GESTURES
+     • Ripple on interactive elements
+     • Smooth toast animation
+     • Touch press feedback on cards
+     • Android-style swipe-back gesture
+     Pure vanilla JS. No dependencies.
+══════════════════════════════════════ -->
+<script>
+// ── Ripple on buttons, tags, pills, nav ──
+document.addEventListener('pointerdown', function(e) {
+  const el = e.target.closest('.btn, .stag, .dpill, .nbtn, .bb');
+  if (!el) return;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = el.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 2;
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  el.appendChild(r);
+  r.addEventListener('animationend', () => r.remove(), { once: true });
+}, { passive: true });
+
+// ── Toast: smooth slide-up animation ──
+const _origToast = window.toast;
+let _toastTimer2;
+window.toast = function(msg, type) {
+  const el = document.getElementById('toast');
+  if (!el) { if (_origToast) _origToast(msg, type); return; }
+  el.textContent = msg;
+  el.style.background = type === 'danger' ? '#ef4444' : '#1a2332';
+  el.classList.remove('show');
+  void el.offsetWidth; // force reflow so re-trigger works
+  el.classList.add('show');
+  clearTimeout(_toastTimer2);
+  _toastTimer2 = setTimeout(() => el.classList.remove('show'), 2600);
+};
+
+// ── Touch press feedback on patient cards ──
+document.addEventListener('touchstart', e => {
+  const el = e.target.closest('.pc');
+  if (el) el.classList.add('pressed');
+}, { passive: true });
+['touchend','touchcancel'].forEach(ev =>
+  document.addEventListener(ev, () =>
+    document.querySelectorAll('.pc.pressed').forEach(el => el.classList.remove('pressed'))
+  , { passive: true })
+);
+
+// ── Android-style Swipe-to-Go-Back gesture ──
+// Tracks a page history stack. A right-swipe starting within
+// 30px of the left edge navigates back one level.
+// A thin indicator line gives visual feedback during the drag.
+(function() {
+  // Page history stack — populated by patching window.go
+  const _pageStack = [];
+  // Map of page → its natural "back" destination
+  const _backMap = {
+    'history'   : 'patients',
+    'addVisit'  : 'dashboard',
+    'patients'  : 'dashboard',
+    'settings'  : 'dashboard',
+  };
+
+  // Patch go() to maintain history stack
+  const _origGo = window.go;
+  window.go = function(pg, btn) {
+    if (_origGo) _origGo(pg, btn);
+    // Push to stack (don't duplicate consecutive same-page entries)
+    if (_pageStack[_pageStack.length - 1] !== pg) _pageStack.push(pg);
+    // Keep stack bounded
+    if (_pageStack.length > 20) _pageStack.shift();
+  };
+
+  // Navigate back: pop stack or use backMap fallback
+  function goBack() {
+    if (_pageStack.length > 1) {
+      _pageStack.pop(); // remove current
+      const prev = _pageStack[_pageStack.length - 1];
+      if (window._origGo) window._origGo(prev, null);
+      else if (_origGo)   _origGo(prev, null);
+    } else {
+      const cur = _pageStack[0];
+      const dest = _backMap[cur] || 'dashboard';
+      if (_origGo) _origGo(dest, null);
+    }
+  }
+
+  // Swipe state
+  let _tx = 0, _ty = 0, _active = false;
+  const EDGE_ZONE  = 30;   // px from left edge to start
+  const MIN_SWIPE  = 80;   // px horizontal travel to trigger back
+  const MAX_VERT   = 60;   // px vertical drift allowed
+  const indicator  = document.getElementById('swipe-indicator');
+
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    _tx = t.clientX;
+    _ty = t.clientY;
+    _active = _tx <= EDGE_ZONE;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!_active) return;
+    const t = e.touches[0];
+    const dx = t.clientX - _tx;
+    const dy = Math.abs(t.clientY - _ty);
+    if (dy > MAX_VERT) { _active = false; if (indicator) indicator.classList.remove('visible'); return; }
+    if (dx > 0 && indicator) indicator.classList.add('visible');
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!indicator) { _active = false; return; }
+    indicator.classList.remove('visible');
+    if (!_active) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - _tx;
+    const dy = Math.abs(t.clientY - _ty);
+    _active = false;
+    if (dx >= MIN_SWIPE && dy <= MAX_VERT) goBack();
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    _active = false;
+    if (indicator) indicator.classList.remove('visible');
+  }, { passive: true });
+})();
+</script>
 <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 </body>
 </html>
