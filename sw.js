@@ -1,4 +1,4 @@
-const CACHE = 'mediassist-v4.1';
+const CACHE = 'mediassist-v4.2';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -18,6 +18,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Only intercept same-origin requests.
+  // Cross-origin requests (Google Fonts, CDN scripts) are left to the browser's
+  // native networking — which fails fast when offline instead of hanging on fetch().
+  if (!e.request.url.startsWith(self.location.origin)) return;
+
   e.respondWith(
     caches.match(e.request).then(r =>
       r || fetch(e.request).catch(() => caches.match('./index.html'))
