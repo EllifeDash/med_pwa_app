@@ -5,7 +5,7 @@
 // Enables offline app loading.
 // ════════════════════════════════════════
 
-const CACHE = 'mediassist-v5.5';
+const CACHE = 'mediassist-v5.6';
 
 const SHELL = [
   './',
