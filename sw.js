@@ -1,12 +1,21 @@
 // ════════════════════════════════════════
 // sw.js — Service Worker
-// Cache-first for app shell (HTML/CSS/JS).
-// Network-only for Supabase API calls.
-// Enables offline app loading.
+// FIX: Supabase CDN library is now cached
+//      in the app shell so the app loads
+//      fully offline after first visit.
+//
+// Strategy:
+//   App shell + CDN libs → cache-first
+//   Supabase REST API    → network-only
+//   Navigation fallback  → index.html
 // ════════════════════════════════════════
 
-const CACHE = 'mediassist-v5.6';
+const CACHE   = 'mediassist-v2';
+const CDN_SB  = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const CDN_H2C = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
 
+// Pre-cache the full app shell INCLUDING the Supabase library.
+// Everything in this list is served from cache when offline.
 const SHELL = [
   './',
   './index.html',
@@ -26,56 +35,83 @@ const SHELL = [
   './js/report.js',
   './js/offline.js',
   './js/init.js',
+  CDN_SB,   // ← critical: Supabase JS library cached here
+  CDN_H2C,  // ← html2canvas for receipts offline
 ];
 
-// ── Install: pre-cache app shell ───────
+// ── Install: pre-cache shell ───────────
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
       .then(c => c.addAll(SHELL))
       .then(() => self.skipWaiting())
+      .catch(err => {
+        // Partial failure (e.g. CDN unreachable during first install)
+        // is acceptable — cache what we can and continue.
+        console.warn('[SW] Pre-cache partial failure:', err);
+        return self.skipWaiting();
+      })
   );
 });
 
-// ── Activate: remove old caches ────────
+// ── Activate: purge old caches ─────────
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ── Fetch strategy ─────────────────────
+// ── Fetch: cache-first for shell/CDN,
+//           network-only for Supabase API ──
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Always go network for Supabase API, auth, CDN scripts
+  // Always network for Supabase REST / Auth / Realtime
+  // (data must be live; offline handled by IDB fallback in db.js)
   if (
-    url.hostname.includes('supabase.co') ||
-    url.hostname.includes('supabase.com') ||
-    url.hostname.includes('cdn.jsdelivr.net') ||
-    url.hostname.includes('fonts.googleapis.com') ||
-    url.hostname.includes('fonts.gstatic.com') ||
-    url.hostname.includes('gstatic.com')
+    url.hostname.endsWith('.supabase.co') ||
+    url.hostname.endsWith('.supabase.com')
   ) {
-    e.respondWith(fetch(e.request));
+    e.respondWith(
+      fetch(e.request).catch(() => new Response(
+        JSON.stringify({ data: null, error: { message: 'Offline' } }),
+        { headers: { 'Content-Type': 'application/json' } }
+      ))
+    );
     return;
   }
 
-  // Cache-first for everything else (app shell)
+  // Google Fonts — network with cache fallback
+  if (
+    url.hostname.includes('fonts.googleapis.com') ||
+    url.hostname.includes('fonts.gstatic.com')
+  ) {
+    e.respondWith(
+      caches.open(CACHE).then(cache =>
+        fetch(e.request)
+          .then(res => { cache.put(e.request, res.clone()); return res; })
+          .catch(() => cache.match(e.request))
+      )
+    );
+    return;
+  }
+
+  // Everything else (app shell + CDN libs): cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(response => {
-        // Cache successful GET responses
-        if (e.request.method === 'GET' && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+      // Not cached yet — fetch and cache it
+      return fetch(e.request).then(res => {
+        if (e.request.method === 'GET' && res.status === 200) {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
         }
-        return response;
+        return res;
       }).catch(() => {
-        // Offline fallback for navigation requests
+        // Offline fallback for page navigations
         if (e.request.mode === 'navigate')
           return caches.match('./index.html');
       });
@@ -83,7 +119,7 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// ── Skip waiting on message ────────────
+// ── Skip waiting on update ─────────────
 self.addEventListener('message', e => {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
