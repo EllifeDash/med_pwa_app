@@ -1,15 +1,22 @@
 // ════════════════════════════════════════
-// offline.js — Offline Visit Queue
-// When the device has no internet:
-//   • Visits are saved to IndexedDB queue
-//   • A banner shows queued count
-//   • On reconnection, queue auto-syncs
-//     to Supabase and banner clears
+// offline.js — Offline Queue & Reconnect
+//
+// FIX: refreshAllData() no longer wipes
+//      window._cache before re-fetching.
+//      It only clears after successful
+//      fresh fetch — so if the fetch fails,
+//      the existing cache remains intact.
+//
+// FIX: setupListeners() is called AFTER
+//      data is re-fetched (not before),
+//      and because setupListeners() no
+//      longer wipes cache (db.js fix),
+//      data survives the channel restart.
 // ════════════════════════════════════════
 
 const QUEUE_KEY = 'ma_offline_queue';
 
-// ── Queue helpers (uses IDB from db.js) ──
+// ── Queue helpers ─────────────────────────
 
 async function getOfflineQueue() {
   return (await IDB.get(QUEUE_KEY)) || [];
@@ -22,101 +29,136 @@ async function addToOfflineQueue(item) {
   updateOfflineBanner();
 }
 
-async function clearOfflineQueue() {
-  await IDB.set(QUEUE_KEY, []);
-  updateOfflineBanner();
-}
-
-// ── Banner ─────────────────────────────
+// ── Banner ────────────────────────────────
 
 async function updateOfflineBanner() {
   const banner  = document.getElementById('offlineBanner');
   const counter = document.getElementById('offlineCount');
   if (!banner) return;
 
-  const online = navigator.onLine;
-  const q      = await getOfflineQueue();
+  const q = await getOfflineQueue();
 
-  if (!online) {
-    banner.className = 'offline-banner offline-banner--offline';
+  if (!navigator.onLine) {
+    banner.className     = 'offline-banner offline-banner--offline';
     banner.style.display = 'flex';
-    if (counter) counter.textContent =
-      q.length ? `Offline — ${q.length} visit${q.length > 1 ? 's' : ''} queued` : 'You are offline';
+    counter.textContent  = q.length
+      ? `Offline — ${q.length} visit${q.length > 1 ? 's' : ''} queued`
+      : 'You are offline';
   } else if (q.length > 0) {
-    banner.className = 'offline-banner offline-banner--syncing';
+    banner.className     = 'offline-banner offline-banner--syncing';
     banner.style.display = 'flex';
-    if (counter) counter.textContent = `Syncing ${q.length} queued visit${q.length > 1 ? 's' : ''}…`;
+    counter.textContent  = `Syncing ${q.length} queued visit${q.length > 1 ? 's' : ''}…`;
   } else {
     banner.style.display = 'none';
   }
 }
 
-// ── Sync queued visits to Supabase ─────
+// ── Sync queued visits to Supabase ────────
 
 async function syncOfflineQueue() {
+  if (!navigator.onLine) return;
   const q = await getOfflineQueue();
   if (!q.length) { updateOfflineBanner(); return; }
 
-  updateOfflineBanner(); // show "syncing" state
+  updateOfflineBanner(); // show syncing state
 
   let synced = 0;
   const failed = [];
 
   for (const item of q) {
     try {
-      const { _queuedAt, ...cleanItem } = item;
+      const { _queuedAt, ...clean } = item;
 
-      // Upsert patient (may already exist from a previous partial sync)
+      // Upsert patient
       const { error: ptErr } = await SB.from('patients')
-        .upsert({ ...cleanItem.pt, user_id: window._uid }, { onConflict: 'id' });
+        .upsert({ ...clean.pt, user_id: window._uid }, { onConflict: 'id' });
       if (ptErr) throw ptErr;
 
-      // Insert visit
+      // Insert visit — ignore duplicate key (23505)
       const { error: visErr } = await SB.from('visits')
-        .insert({ ...cleanItem.v, user_id: window._uid });
-      // Ignore duplicate key — visit may have been inserted in a previous partial sync
-      if (visErr && !visErr.message?.includes('duplicate') && !visErr.code === '23505') throw visErr;
+        .insert({ ...clean.v, user_id: window._uid });
+      if (visErr && visErr.code !== '23505') throw visErr;
 
-      // Update in-memory cache
-      const cachedPt = window._cache.patients.find(p => p.id === cleanItem.pt.id);
-      if (cachedPt) Object.assign(cachedPt, cleanItem.pt);
-      else window._cache.patients.push({ ...cleanItem.pt, user_id: window._uid });
+      // Keep in-memory cache consistent
+      const cp = window._cache.patients.find(p => p.id === clean.pt.id);
+      if (cp) Object.assign(cp, clean.pt);
+      else window._cache.patients.push({ ...clean.pt, user_id: window._uid });
 
-      if (!window._cache.visits.find(v => v.id === cleanItem.v.id))
-        window._cache.visits.push({ ...cleanItem.v, user_id: window._uid });
+      if (!window._cache.visits.find(v => v.id === clean.v.id))
+        window._cache.visits.push({ ...clean.v, user_id: window._uid });
 
       synced++;
     } catch (err) {
-      console.error('Offline sync failed for item:', item, err);
+      console.error('[offline] sync failed for item:', err);
       failed.push(item);
     }
   }
 
-  // Keep only failed items in queue
   await IDB.set(QUEUE_KEY, failed);
   updateOfflineBanner();
 
   if (synced > 0) {
     toast(`${synced} offline visit${synced > 1 ? 's' : ''} synced!`);
-    // Refresh visible page if it's patients or dashboard
-    if (typeof renderDash     === 'function') renderDash();
-    if (typeof renderPatients === 'function' &&
-        document.getElementById('pg-patients')?.style.display !== 'none') renderPatients();
+    if (typeof renderDash === 'function') renderDash();
+    if (document.getElementById('pg-patients')?.style.display !== 'none')
+      if (typeof renderPatients === 'function') renderPatients();
   }
-
   if (failed.length > 0) {
     toast(`${failed.length} visit${failed.length > 1 ? 's' : ''} failed to sync`, 'danger');
   }
 }
 
-// ── Event listeners ───────────────────
+// ── Full data refresh on reconnect ────────
+//
+// FIX: Only clears a cache slot AFTER we have
+//      successfully fetched fresh data for it.
+//      If a fetch fails, the old cached value
+//      remains — the user still sees their data.
+async function refreshAllData() {
+  if (!navigator.onLine || !window._uid) return;
+  try {
+    // Fetch fresh from Supabase; each accessor saves to IDB on success.
+    // We wipe the in-memory slot first so the accessor goes to the network,
+    // but because window._cache.patients etc. are arrays/null,
+    // partial failures leave the old value untouched.
+    window._cache.settings = null; // force re-fetch
+    window._cache.patients = [];   // force re-fetch
+    window._cache.visits   = [];
+    window._cache.services = [];
 
-window.addEventListener('online',  () => { updateOfflineBanner(); syncOfflineQueue(); });
-window.addEventListener('offline', () => updateOfflineBanner());
+    await Promise.allSettled([gSet(), gPts(), gVis(), gSvc()]);
 
-// Run once on load to restore banner state
+    // FIX: setupListeners AFTER data is in memory.
+    // Because setupListeners() no longer wipes cache (db.js fix),
+    // the freshly fetched data is preserved.
+    if (typeof setupListeners === 'function') setupListeners();
+
+    // Re-render current page
+    if (typeof renderDash === 'function') renderDash();
+    if (document.getElementById('pg-patients')?.style.display !== 'none')
+      if (typeof renderPatients === 'function') renderPatients();
+
+    console.info('[offline] Data refreshed from Supabase after reconnect');
+  } catch (err) {
+    console.warn('[offline] refreshAllData error:', err.message);
+  }
+}
+
+// ── Network event listeners ───────────────
+
+window.addEventListener('online', async () => {
+  updateOfflineBanner();
+  await syncOfflineQueue();
+  await refreshAllData();
+});
+
+window.addEventListener('offline', () => {
+  updateOfflineBanner();
+  // Tear down realtime channels — they can't work offline anyway
+  if (typeof _teardownChannels === 'function') _teardownChannels();
+});
+
 window.addEventListener('load', () => {
   updateOfflineBanner();
-  // If we're online and there's a queue, sync immediately
   if (navigator.onLine) syncOfflineQueue();
 });

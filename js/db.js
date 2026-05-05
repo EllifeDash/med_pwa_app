@@ -1,19 +1,26 @@
 // ════════════════════════════════════════
-// db.js — Supabase Data Layer
-// Replaces Firestore entirely.
+// db.js — Data Layer
 //
-// Data model (Supabase PostgreSQL tables):
-//   patients  — id TEXT pk, user_id UUID, name, age, gender, phone, address, photo, createdAt
-//   visits    — id TEXT pk, user_id UUID, patientId, patientName, date, time, notes,
-//               services JSONB, subtotal, discount, net, createdAt
-//   services  — id TEXT pk ("${uid}_${svcId}"), user_id UUID, svc_id INT, name, price
-//   hist_notes— id TEXT pk, user_id UUID, patientId, date, category, title, details
-//   settings  — user_id UUID pk, name, rank, businessName, tagline, phone, address, photo, logo
+// Offline-first pattern:
+//   Every accessor tries Supabase first.
+//   On success → saves to IDB for offline.
+//   On failure / offline → reads from IDB.
+//   In-memory cache avoids redundant reads.
 //
-// Binary documents (base64) stay in IndexedDB (too large for DB rows).
+// FIX: _teardownChannels() is now separate
+//      from clearListeners() so setupListeners()
+//      does NOT wipe window._cache.
+// FIX: IDB stays on 'mediassist_docs' (v2)
+//      for backward compatibility with docs.
 // ════════════════════════════════════════
 
-const SB = window.SB; // set by supabase.js (type=module, runs first)
+const SB = window.SB;
+
+// ── IDB cache keys ────────────────────────
+const IDB_SETTINGS = 'ma_cache_settings';
+const IDB_PATIENTS = 'ma_cache_patients';
+const IDB_VISITS   = 'ma_cache_visits';
+const IDB_SERVICES = 'ma_cache_services';
 
 // ── Default seed data ─────────────────────
 const DEFAULT_SVC = [
@@ -38,46 +45,62 @@ const DEFAULT_SET = {
 // ── In-memory cache ───────────────────────
 window._cache = { patients: [], visits: [], services: [], settings: null };
 
-// ── Real-time channel handles ─────────────
+// ── Realtime channel handles ──────────────
 let _channels = [];
 
-/**
- * Set up Supabase real-time subscriptions for patients + visits.
- * Called once after the user authenticates (from init.js → bootApp).
- * Requires: Supabase Dashboard → Database → Replication → enable tables.
- */
-function setupListeners() {
-  clearListeners();
-  const uid = window._uid;
-
-  // ── Patients channel ──
-  const patCh = SB.channel('patients_' + uid)
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'patients',
-      filter: `user_id=eq.${uid}`,
-    }, payload => {
-      _applyChange(window._cache.patients, payload);
-      if (document.getElementById('pg-patients')?.style.display !== 'none')
-        if (typeof renderPatients === 'function') renderPatients();
-    })
-    .subscribe();
-
-  // ── Visits channel ──
-  const visCh = SB.channel('visits_' + uid)
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'visits',
-      filter: `user_id=eq.${uid}`,
-    }, payload => {
-      _applyChange(window._cache.visits, payload);
-      if (document.getElementById('pg-dashboard')?.style.display !== 'none')
-        if (typeof renderDash === 'function') renderDash();
-    })
-    .subscribe();
-
-  _channels = [patCh, visCh];
+// ── FIX: separated from clearListeners() ──
+// Only removes WebSocket subscriptions.
+// Does NOT touch window._cache.
+function _teardownChannels() {
+  try { _channels.forEach(ch => SB && SB.removeChannel && SB.removeChannel(ch)); } catch (_) {}
+  _channels = [];
 }
 
-/** Apply a real-time payload to a cache array in-place. */
+// Called ONLY on sign-out. Wipes subscriptions AND cache.
+function clearListeners() {
+  _teardownChannels();
+  window._cache = { patients: [], visits: [], services: [], settings: null };
+}
+
+// Called on app boot and on reconnect.
+// FIX: uses _teardownChannels() — does NOT wipe window._cache.
+function setupListeners() {
+  _teardownChannels(); // tear down old channels, preserve cache
+
+  if (!navigator.onLine || !window._uid) return;
+
+  const uid = window._uid;
+  try {
+    const patCh = SB.channel('patients_' + uid)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'patients',
+        filter: `user_id=eq.${uid}`,
+      }, payload => {
+        _applyChange(window._cache.patients, payload);
+        IDB.set(IDB_PATIENTS, window._cache.patients); // keep IDB in sync
+        if (document.getElementById('pg-patients')?.style.display !== 'none')
+          if (typeof renderPatients === 'function') renderPatients();
+      })
+      .subscribe();
+
+    const visCh = SB.channel('visits_' + uid)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'visits',
+        filter: `user_id=eq.${uid}`,
+      }, payload => {
+        _applyChange(window._cache.visits, payload);
+        IDB.set(IDB_VISITS, window._cache.visits);
+        if (document.getElementById('pg-dashboard')?.style.display !== 'none')
+          if (typeof renderDash === 'function') renderDash();
+      })
+      .subscribe();
+
+    _channels = [patCh, visCh];
+  } catch (err) {
+    console.warn('[db] setupListeners: realtime skipped —', err.message);
+  }
+}
+
 function _applyChange(arr, payload) {
   if (payload.eventType === 'INSERT') {
     if (!arr.find(x => x.id === payload.new.id)) arr.push(payload.new);
@@ -90,143 +113,187 @@ function _applyChange(arr, payload) {
   }
 }
 
-/**
- * Tear down all real-time subscriptions and wipe the cache.
- * Called on sign-out.
- */
-function clearListeners() {
-  _channels.forEach(ch => SB.removeChannel(ch));
-  _channels = [];
-  window._cache = { patients: [], visits: [], services: [], settings: null };
-}
-
 // ── Data accessors ────────────────────────
-// Same function signatures used across the app — now backed by Supabase.
+// Pattern: memory cache → Supabase (save to IDB) → IDB fallback → safe default
 
-/** Fetch user settings. Falls back to defaults for new users. */
 async function gSet() {
   if (window._cache.settings) return window._cache.settings;
-  const { data } = await SB.from('settings')
-    .select('*')
-    .eq('user_id', window._uid)
-    .maybeSingle();
-  window._cache.settings = data ? _stripMeta(data) : { ...DEFAULT_SET };
+
+  if (navigator.onLine) {
+    try {
+      const { data } = await SB.from('settings')
+        .select('*').eq('user_id', window._uid).maybeSingle();
+      const result = data ? _stripMeta(data) : { ...DEFAULT_SET };
+      window._cache.settings = result;
+      IDB.set(IDB_SETTINGS, result); // non-blocking persist
+      return result;
+    } catch (err) {
+      console.warn('[db] gSet network fail, trying IDB:', err.message);
+    }
+  }
+
+  const cached = await IDB.get(IDB_SETTINGS);
+  window._cache.settings = cached || { ...DEFAULT_SET };
   return window._cache.settings;
 }
 
-/** Fetch all patients for the current user. */
 async function gPts() {
   if (window._cache.patients.length) return window._cache.patients;
-  const { data, error } = await SB.from('patients')
-    .select('*')
-    .eq('user_id', window._uid);
-  if (error) { console.error('gPts:', error); return []; }
-  window._cache.patients = data || [];
+
+  if (navigator.onLine) {
+    try {
+      const { data, error } = await SB.from('patients')
+        .select('*').eq('user_id', window._uid);
+      if (!error) {
+        window._cache.patients = data || [];
+        IDB.set(IDB_PATIENTS, window._cache.patients);
+        return window._cache.patients;
+      }
+    } catch (err) {
+      console.warn('[db] gPts network fail, trying IDB:', err.message);
+    }
+  }
+
+  const cached = await IDB.get(IDB_PATIENTS);
+  window._cache.patients = cached || [];
   return window._cache.patients;
 }
 
-/** Fetch all visits for the current user. */
 async function gVis() {
   if (window._cache.visits.length) return window._cache.visits;
-  const { data, error } = await SB.from('visits')
-    .select('*')
-    .eq('user_id', window._uid);
-  if (error) { console.error('gVis:', error); return []; }
-  window._cache.visits = data || [];
+
+  if (navigator.onLine) {
+    try {
+      const { data, error } = await SB.from('visits')
+        .select('*').eq('user_id', window._uid);
+      if (!error) {
+        window._cache.visits = data || [];
+        IDB.set(IDB_VISITS, window._cache.visits);
+        return window._cache.visits;
+      }
+    } catch (err) {
+      console.warn('[db] gVis network fail, trying IDB:', err.message);
+    }
+  }
+
+  const cached = await IDB.get(IDB_VISITS);
+  window._cache.visits = cached || [];
   return window._cache.visits;
 }
 
-/**
- * Fetch services. Seeds DEFAULT_SVC for new users.
- * Services use a composite string pk: "${uid}_${numericId}"
- * to handle multiple users sharing the same numeric ids.
- * On return, rows are mapped to { id: numericId, name, price }
- * so all existing app logic (s.id) remains unchanged.
- */
 async function gSvc() {
   if (window._cache.services.length) return window._cache.services;
-  const { data, error } = await SB.from('services')
-    .select('*')
-    .eq('user_id', window._uid);
-  if (error) { console.error('gSvc:', error); return []; }
 
-  if (!data || data.length === 0) {
-    // First login — seed default services
-    const rows = DEFAULT_SVC.map(s => ({
-      id:      `${window._uid}_${s.id}`,
-      user_id: window._uid,
-      svc_id:  s.id,
-      name:    s.name,
-      price:   s.price,
-    }));
-    const { error: seedErr } = await SB.from('services').insert(rows);
-    if (seedErr) console.error('gSvc seed:', seedErr);
-    window._cache.services = [...DEFAULT_SVC]; // already in { id, name, price } format
-  } else {
-    // Map DB rows → app format: replace composite id with numeric svc_id
-    window._cache.services = data.map(s => ({ id: s.svc_id, name: s.name, price: s.price }));
+  if (navigator.onLine) {
+    try {
+      const { data, error } = await SB.from('services')
+        .select('*').eq('user_id', window._uid);
+      if (!error) {
+        if (!data || !data.length) {
+          // First login — seed defaults
+          const rows = DEFAULT_SVC.map(s => ({
+            id: `${window._uid}_${s.id}`, user_id: window._uid,
+            svc_id: s.id, name: s.name, price: s.price,
+          }));
+          await SB.from('services').insert(rows).catch(e => console.warn('[db] seed svc:', e.message));
+          window._cache.services = [...DEFAULT_SVC];
+        } else {
+          window._cache.services = data.map(s => ({ id: s.svc_id, name: s.name, price: s.price }));
+        }
+        IDB.set(IDB_SERVICES, window._cache.services);
+        return window._cache.services;
+      }
+    } catch (err) {
+      console.warn('[db] gSvc network fail, trying IDB:', err.message);
+    }
   }
+
+  const cached = await IDB.get(IDB_SERVICES);
+  window._cache.services = (cached && cached.length) ? cached : [...DEFAULT_SVC];
   return window._cache.services;
 }
 
-/** Fetch history notes for a specific patient. */
 async function gHistNotes(pid) {
-  const { data, error } = await SB.from('hist_notes')
-    .select('*')
-    .eq('user_id', window._uid)
-    .eq('patientId', pid);
-  if (error) { console.error('gHistNotes:', error); return []; }
-  return data || [];
+  if (navigator.onLine) {
+    try {
+      const { data, error } = await SB.from('hist_notes')
+        .select('*').eq('user_id', window._uid).eq('patientId', pid);
+      if (!error) return data || [];
+    } catch (err) {
+      console.warn('[db] gHistNotes network fail:', err.message);
+    }
+  }
+  return []; // history notes not cached offline (acceptable trade-off)
 }
 
-/** Fetch documents for a patient — stored locally in IndexedDB (base64 safe). */
 async function gDocs(pid) {
   return (await IDB.get('ma_docs_' + pid)) || [];
 }
 
-/** Remove Supabase-internal fields (user_id, svc_id) before returning to app. */
 function _stripMeta(obj) {
   const { user_id, svc_id, ...rest } = obj;
   return rest;
 }
 
 // ════════════════════════════════════════
-// IDB — Minimal IndexedDB wrapper
-// Used ONLY for binary/base64 documents.
-// (Supabase rows should stay under 1MB;
-//  base64 images easily exceed that.)
+// IDB — unified key-value store
+// FIX: stays on 'mediassist_docs' database
+//      so old document blobs are preserved.
+//      Version bumped to 2 to ensure the
+//      'kv' store exists in all browsers.
 // ════════════════════════════════════════
 const IDB = (() => {
-  const NAME = 'mediassist_docs', VER = 1, STORE = 'kv';
+  const NAME = 'mediassist_docs'; // unchanged — backward compat with existing docs
+  const VER  = 2;
+  const STORE = 'kv';
   let _idb = null;
 
   function open() {
     if (_idb) return Promise.resolve(_idb);
     return new Promise((res, rej) => {
       const req = indexedDB.open(NAME, VER);
-      req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
-      req.onsuccess       = e => { _idb = e.target.result; res(_idb); };
-      req.onerror         = e => rej(e.target.error);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        // Creates 'kv' store on fresh install or v1→v2 upgrade.
+        // Existing object stores are untouched.
+        if (!db.objectStoreNames.contains(STORE))
+          db.createObjectStore(STORE);
+      };
+      req.onsuccess = e => { _idb = e.target.result; res(_idb); };
+      req.onerror   = e => {
+        console.error('[IDB] open error:', e.target.error);
+        rej(e.target.error);
+      };
     });
   }
 
   async function get(k) {
-    const idb = await open();
-    return new Promise((res, rej) => {
-      const req = idb.transaction(STORE, 'readonly').objectStore(STORE).get(k);
-      req.onsuccess = () => res(req.result ?? null);
-      req.onerror   = e => rej(e.target.error);
-    });
+    try {
+      const idb = await open();
+      return new Promise((res, rej) => {
+        const req = idb.transaction(STORE, 'readonly').objectStore(STORE).get(k);
+        req.onsuccess = () => res(req.result ?? null);
+        req.onerror   = e => rej(e.target.error);
+      });
+    } catch (err) {
+      console.warn('[IDB] get("' + k + '") error:', err);
+      return null;
+    }
   }
 
   async function set(k, v) {
-    const idb = await open();
-    return new Promise((res, rej) => {
-      const tx = idb.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(v, k);
-      tx.oncomplete = () => res(true);
-      tx.onerror    = e => rej(e.target.error);
-    });
+    try {
+      const idb = await open();
+      return new Promise((res, rej) => {
+        const tx = idb.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(v, k);
+        tx.oncomplete = () => res(true);
+        tx.onerror    = e => rej(e.target.error);
+      });
+    } catch (err) {
+      console.warn('[IDB] set("' + k + '") error:', err);
+      return false;
+    }
   }
 
   return { get, set };
