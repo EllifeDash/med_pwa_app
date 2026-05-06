@@ -190,6 +190,8 @@ User A cannot access User B's data. Unauthenticated requests return empty. A `BE
 
 - [ ] Shared clinic mode (multi-staff, shared patients)
 - [ ] Appointment scheduling
+- [ ] AI Integration 
+- [ ] Smart Appliences
 - [ ] Dark mode
 - [ ] Urdu language support
 
