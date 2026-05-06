@@ -197,7 +197,8 @@ User A cannot access User B's data. Unauthenticated requests return empty. A `BE
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+This project is licensed under a Proprietary License.  
+All rights reserved. See the LICENSE file for details. — see [LICENSE]
 
 ---
 
