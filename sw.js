@@ -35,6 +35,7 @@ const SHELL = [
   './js/report.js',
   './js/offline.js',
   './js/init.js',
+  './js/bookings.js',
   CDN_SB,   // ← critical: Supabase JS library cached here
   CDN_H2C,  // ← html2canvas for receipts offline
 ];
