@@ -58,7 +58,7 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .screen.active{display:block}
 
 /* Pages fade+slide in when navigated to */
-#pg-dashboard,#pg-patients,#pg-addVisit,#pg-history,#pg-settings{
+#pg-dashboard,#pg-patients,#pg-bookings,#pg-addVisit,#pg-history,#pg-settings{
   animation:pageIn var(--dur) var(--ease) both;
 }
 @keyframes pageIn{
@@ -561,6 +561,18 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .empty svg{width:48px;height:48px;margin-bottom:10px;opacity:.25}
 .empty p{font-size:15px;font-weight:700;margin-bottom:4px}
 .empty span{font-size:13px}
+
+/* ── Bookings Page ────────────────────── */
+.bk-summary{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.bk-card{padding:16px 18px}
+.bk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.bk-name{font-size:16px;font-weight:700}
+.bk-meta{font-size:13px;color:var(--tx2);margin-top:2px}
+.bk-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.bk-chip{background:var(--sur2);border:1px solid var(--bd);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--tx2)}
+.bk-note{margin-top:10px;background:var(--sur2);border:1px dashed var(--bd);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--tx2)}
+.bk-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.bk-actions .btn{flex:1;min-width:120px}
 
 /* ── Trash Button ──────────────────────── */
 .trash-btn{

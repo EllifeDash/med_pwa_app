@@ -150,6 +150,7 @@ window.addEventListener('online', async () => {
   updateOfflineBanner();
   await syncOfflineQueue();
   await refreshAllData();
+  if (typeof renderBookings === 'function') renderBookings(true);
 });
 
 window.addEventListener('offline', () => {

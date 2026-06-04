@@ -16,6 +16,8 @@
 async function bootApp(user) {
   setupListeners();       // start real-time subscriptions (db.js)
 
+  if (typeof renderBookings === 'function') renderBookings();
+
   const s = await gSet(); // load settings from Supabase
   await gSvc();           // seed default services if first login
 

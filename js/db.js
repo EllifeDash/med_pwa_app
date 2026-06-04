@@ -43,7 +43,7 @@ const DEFAULT_SET = {
 };
 
 // ── In-memory cache ───────────────────────
-window._cache = { patients: [], visits: [], services: [], settings: null };
+window._cache = { patients: [], visits: [], services: [], settings: null, appointments: [] };
 
 // ── Realtime channel handles ──────────────
 let _channels = [];
@@ -54,12 +54,18 @@ let _channels = [];
 function _teardownChannels() {
   try { _channels.forEach(ch => SB && SB.removeChannel && SB.removeChannel(ch)); } catch (_) {}
   _channels = [];
+  try {
+    if (window._apptChannel && SB && SB.removeChannel) {
+      SB.removeChannel(window._apptChannel);
+      window._apptChannel = null;
+    }
+  } catch (_) {}
 }
 
 // Called ONLY on sign-out. Wipes subscriptions AND cache.
 function clearListeners() {
   _teardownChannels();
-  window._cache = { patients: [], visits: [], services: [], settings: null };
+  window._cache = { patients: [], visits: [], services: [], settings: null, appointments: [] };
 }
 
 // Called on app boot and on reconnect.

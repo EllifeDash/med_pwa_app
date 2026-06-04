@@ -96,6 +96,7 @@
     <div class="topnav-right">
       <button class="nbtn on" data-pg="dashboard" onclick="go('dashboard',this)">Dashboard</button>
       <button class="nbtn"    data-pg="patients"  onclick="go('patients',this)">Patients</button>
+      <button class="nbtn"    data-pg="bookings"  onclick="go('bookings',this)">Bookings</button>
       <button class="nbtn"    data-pg="addVisit"  onclick="go('addVisit',this)">+ New Visit</button>
       <button class="nbtn"    data-pg="report"    onclick="go('report',this)">Report</button>
       <button class="nbtn"    data-pg="settings"  onclick="go('settings',this)">Settings</button>
@@ -211,6 +212,22 @@
     </div>
     <div id="patientsList"></div>
   </div><!-- /#pg-patients -->
+
+
+  <!-- ══════════ BOOKINGS ══════════ -->
+  <div id="pg-bookings" class="pw" style="display:none">
+    <div class="flex ic jb mb12">
+      <div>
+        <div class="ptitle">Bookings</div>
+        <div class="psub">Incoming appointment requests to review and action</div>
+      </div>
+      <button class="btn bg bsm" onclick="renderBookings(true)">Refresh</button>
+    </div>
+    <div class="bk-summary">
+      <span class="bdg b-amber" id="bkPendingCount">0 Pending</span>
+    </div>
+    <div id="bookingsList"></div>
+  </div><!-- /#pg-bookings -->
 
 
   <!-- ══════════ ADD VISIT ══════════ -->
@@ -514,6 +531,17 @@
         </svg>
         Patients
       </button>
+      <button class="bb" data-pg="bookings" onclick="go('bookings',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <path d="M7 15h4"/>
+          <path d="M7 18h8"/>
+        </svg>
+        Bookings
+      </button>
       <button class="bb" data-pg="addVisit" onclick="go('addVisit',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -601,6 +629,23 @@
     <div class="flex g12 mt16">
       <button class="btn bg bfl" onclick="closeMo('histModal')">Cancel</button>
       <button class="btn bp bfl" onclick="saveHistNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule booking modal -->
+<div class="mo" id="bkReschedModal">
+  <div class="mb" style="position:relative">
+    <button class="mc" onclick="closeMo('bkReschedModal')">✕</button>
+    <div style="font-size:19px;font-weight:700;margin-bottom:3px">Reschedule Booking</div>
+    <div class="tsm ts mb16">Update date and time for <span id="bkReschedName">Booking</span></div>
+    <div class="fg">
+      <div class="fi"><label>New Date</label><input id="bkNewDate" type="date"/></div>
+      <div class="fi"><label>New Time</label><input id="bkNewTime" type="time"/></div>
+    </div>
+    <div class="flex g12 mt16">
+      <button class="btn bg bfl" onclick="closeMo('bkReschedModal')">Cancel</button>
+      <button class="btn bp bfl" onclick="submitReschedule()">Save</button>
     </div>
   </div>
 </div>
@@ -730,6 +775,7 @@ document.addEventListener('touchstart', e => {
     'history'   : 'patients',
     'addVisit'  : 'dashboard',
     'patients'  : 'dashboard',
+    'bookings'  : 'dashboard',
     'settings'  : 'dashboard',
   };
 
