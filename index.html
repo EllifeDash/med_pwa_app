@@ -224,7 +224,13 @@
       <button class="btn bg bsm" onclick="renderBookings(true)">Refresh</button>
     </div>
     <div class="bk-summary">
-      <span class="bdg b-amber" id="bkPendingCount">0 Pending</span>
+      <span class="bdg b-amber" id="bkPendingCount">0</span>
+    </div>
+    <div class="bk-filters" id="bkFilters">
+      <button class="dpill on" data-filter="pending"    onclick="setBookingFilter('pending',this)">Pending</button>
+      <button class="dpill"    data-filter="accepted"   onclick="setBookingFilter('accepted',this)">Accepted</button>
+      <button class="dpill"    data-filter="rescheduled" onclick="setBookingFilter('rescheduled',this)">Rescheduled</button>
+      <button class="dpill"    data-filter="rejected"   onclick="setBookingFilter('rejected',this)">Rejected</button>
     </div>
     <div id="bookingsList"></div>
   </div><!-- /#pg-bookings -->
