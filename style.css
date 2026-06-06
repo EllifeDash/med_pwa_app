@@ -570,11 +570,24 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .dpill.on .bk-fcnt{background:rgba(255,255,255,.25)}
 .bk-card{padding:16px 18px}
 .bk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.bk-top-info{flex:1;min-width:0}
+.bk-top-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .bk-name{font-size:16px;font-weight:700}
 .bk-meta{font-size:13px;color:var(--tx2);margin-top:2px}
-.bk-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.bk-chip{background:var(--sur2);border:1px solid var(--bd);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--tx2)}
-.bk-note{margin-top:10px;background:var(--sur2);border:1px dashed var(--bd);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--tx2)}
+.bk-phone-row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.bk-phone-val{font-size:14px;font-weight:600;color:var(--tx)}
+.bk-wa-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#dcfce7;color:#25d366;transition:transform 150ms,box-shadow 150ms;flex-shrink:0}
+.bk-wa-badge:hover{transform:scale(1.15);box-shadow:0 2px 8px rgba(37,211,102,.3)}
+.bk-arrow{background:none;border:none;font-size:16px;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;transition:transform 250ms ease,color 150ms;line-height:1;display:flex;align-items:center;justify-content:center;width:28px;height:28px}
+.bk-arrow:hover{color:var(--tx)}
+.bk-card.bk-open .bk-arrow{transform:rotate(180deg)}
+.bk-expand{max-height:0;overflow:hidden;opacity:0;transition:max-height .32s ease,opacity .25s ease,margin-top .25s ease;margin-top:0}
+.bk-card.bk-open .bk-expand{max-height:500px;opacity:1;margin-top:12px}
+.bk-detail-line{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:14px}
+.bk-detail-line:last-of-type{border-bottom:none}
+.bk-detail-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;min-width:56px}
+.bk-detail-value{color:var(--tx);flex:1}
+.bk-note{margin-top:8px;background:var(--sur2);border:1px dashed var(--bd);border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--tx2)}
 .bk-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .bk-actions .btn{flex:1;min-width:120px}
 
