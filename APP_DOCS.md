@@ -27,7 +27,9 @@ Internal developer reference. Assumes you have read the README.
 Browser
   ├── Service Worker (sw.js)
   │     ├── App shell → cache-first (HTML, CSS, JS, CDN libs)
-  │     └── Supabase API → network, fail-safe offline response
+  │     ├── Supabase API → network, fail-safe offline response
+  │     └── Notifications → receives `new_booking` message from main thread,
+  │                         shows browser notification, click → focus + navigate
   │
   ├── supabase.js [module]
   │     ├── Reads JWT from localStorage (getSession — no network)
@@ -39,6 +41,12 @@ Browser
   │     ├── window._cache  — in-memory (fastest read)
   │     ├── Supabase fetch — writes result to IDB
   │     └── IDB fallback   — used when offline
+  │
+  ├── bookings.js [defer]
+  │     ├── Supabase Realtime channel (`appointments_feed`) for live INSERT/UPDATE/DELETE
+  │     ├── In-memory cache (`window._cache.appointments`)
+  │     ├── On INSERT: toast + postMessage to Service Worker
+  │     └── Accept → update DB + open WhatsApp confirmation via wa.me
   │
   └── offline.js [defer]
         ├── Queues visits in IDB when offline (navigator.onLine)
@@ -68,6 +76,7 @@ history.js   [defer]
 visits.js    [defer]
 receipt.js   [defer]
 report.js    [defer]
+bookings.js  [defer]
 settings.js  [defer]
 offline.js   [defer]
 init.js      [defer]   — LAST; exposes bootApp/showAccessDenied to window.*
@@ -192,6 +201,14 @@ The cache slots are cleared one at a time before each fetch, **not** all at once
 - `cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`
 - `cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js`
 
+### Push Notifications
+
+The SW handles `message` events of type `new_booking` sent from the main thread's Supabase Realtime handler. On receipt it calls `showNotification()` with the patient name and service. 
+
+The `notificationclick` handler focuses the existing app window and posts a `navigate: 'bookings'` message back, which `init.js` catches and routes to the Bookings page.
+
+Notifications require `Notification.requestPermission()` — called once in `enterApp()`.
+
 ---
 
 ## 7. Database Schema
@@ -205,14 +222,24 @@ The cache slots are cleared one at a time before each fetch, **not** all at once
 | `visits` | `id` TEXT | Visit records — `services` is JSONB |
 | `services` | `id` TEXT | Per-user service catalogue (`"${uid}_${svcId}"`) |
 | `hist_notes` | `id` TEXT | Medical history notes per patient |
+| `appointments` | `id` UUID | Public booking requests — INSERT allowed by anon RLS |
 
-All tables: `user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE`
+All tables except `appointments`: `user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE`
 
-### RLS policy (identical on all 5 tables)
+`appointments` columns: `id`, `created_at`, `patient_name`, `patient_phone`, `patient_age`, `patient_gender`, `patient_address`, `requested_service`, `preferred_date`, `preferred_time`, `notes`, `status` (default `'pending'`), `admin_comment`, `handled_by`, `handled_at`.
+
+### RLS policy (on all 5 internal tables)
 ```sql
 FOR ALL
 USING      (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id)
+```
+
+### Appointments RLS (public INSERT only)
+```sql
+CREATE POLICY "Public can insert appointments"
+ON public.appointments FOR INSERT
+TO anon WITH CHECK (true);
 ```
 
 ### Auto user_id trigger
@@ -233,8 +260,9 @@ go(pg, btn)  // nav.js — shows page, updates nav .on class, calls render fn
 
 | Page | Render function | Back destination |
 |---|---|---|
-| `dashboard` | `renderDash()` | — |
+| `dashboard` | `renderDash()` (KPIs + `renderDashBookings()`) | — |
 | `patients` | `renderPatients()` | dashboard |
+| `bookings` | `renderBookings()` (full filter + expand/collapse) | dashboard |
 | `addVisit` | `renderSvcTags()` | dashboard |
 | `history` | `openHistory(pid)` | patients |
 | `report` | `initReport()` | dashboard |
@@ -250,7 +278,7 @@ Swipe-back gesture reads `_backMap` in the micro-script inline block.
 |---|---|---|
 | `bootApp(user)` | init.js | Entry point after auth confirmed |
 | `showAccessDenied()` | init.js | Lock screen — no form |
-| `enterApp()` | init.js | Welcome → Dashboard |
+| `enterApp()` | init.js | Welcome → Dashboard + `Notification.requestPermission()` |
 | `setupListeners()` | db.js | Start realtime channels; safe to call multiple times |
 | `clearListeners()` | db.js | Sign-out only — wipes cache |
 | `syncOfflineQueue()` | offline.js | Flush IDB queue to Supabase |
@@ -260,8 +288,15 @@ Swipe-back gesture reads `_backMap` in the micro-script inline block.
 | `exportCSV()` | utils.js | Download all visits as CSV |
 | `shareWhatsApp()` | receipt.js | Open `wa.me` with text receipt |
 | `renderReport()` | report.js | Monthly summary — re-runs on month-picker change |
+| `saveReportImage()` | report.js | html2canvas capture of `#reportContent` → JPEG download |
 | `setDashRange(r, btn)` | dashboard.js | Update filter pill + re-render dashboard |
 | `applyCustomRange()` | dashboard.js | Validate & apply custom date range |
+| `renderDashBookings()` | dashboard.js | Render pending bookings list below dashboard KPIs |
+| `renderBookings(force)` | bookings.js | Full bookings page — filters, expand/collapse, accept/reject |
+| `handleAccept(id)` | bookings.js | Accept booking → update DB + open WhatsApp confirmation |
+| `updateAppointment(id, action)` | bookings.js | Concurrency-safe status update (pending → accepted/rejected/rescheduled) |
+| `listenToAppointments(cb)` | bookings.js | Supabase Realtime channel for appointments table |
+| `buildWhatsAppURL(appt, name)` | bookings.js | Build wa.me link with confirmation message |
 
 ---
 

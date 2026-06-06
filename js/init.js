@@ -91,6 +91,16 @@ function enterApp() {
   document.getElementById('ws').style.display = 'none';
   document.getElementById('app').classList.add('active');
   go('dashboard', null);
+  // Request notification permission for booking alerts
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  // Listen for navigation requests from service worker (notification clicks)
+  navigator.serviceWorker?.addEventListener('message', event => {
+    if (event.data?.type === 'navigate' && typeof go === 'function') {
+      go(event.data.page, null);
+    }
+  });
 }
 
 /**

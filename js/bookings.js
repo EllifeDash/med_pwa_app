@@ -156,6 +156,15 @@ function _ensureApptListener() {
         const nm = payload.new?.patient_name || 'New booking';
         toast(`New booking: ${nm}`);
       }
+      // Notify service worker for push notification
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'new_booking',
+          title: 'New Booking Request',
+          body: `${payload.new?.patient_name || 'Someone'} — ${payload.new?.requested_service || 'Home Visit'}`,
+          tag: payload.new?.id || Date.now(),
+        });
+      }
     }
     if (listVisible) renderBookings();
   });

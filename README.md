@@ -24,14 +24,16 @@ MediAssist Pro is a mobile-first patient management system built as a PWA. It wo
 
 | Module | What it does |
 |---|---|
-| **Dashboard** | 4 KPI cards (Visits, Revenue, New Patients, Discounts) · SVG revenue chart with Today/Week/Month/Year/Custom date filter · Top services & top patients |
+| **Dashboard** | 4 KPI cards (Visits, Revenue, New Patients, Discounts) · pending bookings list with WhatsApp · Today/Week/Month/Year/Custom date filter |
 | **Patients** | Searchable list · full profiles · photo upload · cascade delete |
 | **New Visit** | Tap-to-select services · price overrides · discount · autocomplete · works offline |
 | **Patient History** | Categorised medical notes · document upload (PDF/images) · visit timeline |
 | **Receipts** | Branded receipt · Save as JPEG · **Share on WhatsApp** |
-| **Monthly Report** | Month-picker · KPIs vs previous month (▲▼%) · daily chart · top services & patients |
+| **Bookings** | Inbound appointment requests · Accept/Reject/Reschedule · expand/collapse cards · **WhatsApp confirmation** |
+| **Monthly Report** | Month-picker · KPIs vs previous month (▲▼%) · daily chart · top services · top patients · recent visits · **Save as image** |
 | **Settings** | Business profile · logo · service catalogue · **Export all visits to CSV** |
 | **Offline** | Full app loads from cache · visits queued in IDB · auto-syncs on reconnect |
+| **Notifications** | **Browser push** on new booking via Service Worker · click to navigate to Bookings page |
 
 ---
 
@@ -60,15 +62,16 @@ mediassist/
     ├── supabase.js     # [module] Auth, offline boot, session management
     ├── db.js           # Data layer — Supabase + IDB fallback for all reads
     ├── init.js         # bootApp(), enterApp(), showAccessDenied()
-    ├── nav.js          # go() router — 6 pages
+    ├── nav.js          # go() router — 7 pages
     ├── ui.js           # openMo() / closeMo()
     ├── utils.js        # fmtDate(), toast(), exportCSV()
-    ├── dashboard.js    # KPIs, SVG chart, custom date range
+    ├── dashboard.js    # KPIs, custom date range, pending bookings list
     ├── patients.js     # Patient list & deletePatient()
     ├── history.js      # Notes, documents, visit timeline
     ├── visits.js       # Visit form — online & offline save paths
     ├── receipt.js      # Receipt builder, saveImage(), shareWhatsApp()
-    ├── report.js       # Monthly summary report
+    ├── report.js       # Monthly summary + saveReportImage()
+    ├── bookings.js     # Appointment management, realtime, WhatsApp accept
     ├── settings.js     # Profile, logo, service CRUD
     └── offline.js      # Queue management, sync, reconnect refresh
 ```
@@ -189,7 +192,6 @@ User A cannot access User B's data. Unauthenticated requests return empty. A `BE
 ## Roadmap
 
 - [ ] Shared clinic mode (multi-staff, shared patients)
-- [ ] Appointment scheduling
 - [ ] AI Integration 
 - [ ] Smart Appliences
 - [ ] Dark mode

@@ -169,35 +169,8 @@
     <!-- KPI cards -->
     <div id="statsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
 
-    <!-- Charts row -->
-    <div class="dash-grid mb14">
-      <div class="card">
-        <div class="flex ic jb mb12">
-          <h3 id="dashChartTitle">Revenue Trend</h3>
-          <span class="bdg b-blue" id="dashChartBadge"></span>
-        </div>
-        <div id="dashChart"></div>
-      </div>
-      <div class="card">
-        <h3 class="mb12">Top Services</h3>
-        <div id="dashTopSvcs"></div>
-      </div>
-    </div>
-
-    <!-- Bottom row -->
-    <div class="dash-grid">
-      <div class="card">
-        <div class="flex ic jb mb12">
-          <h3>Recent Visits</h3>
-          <button class="btn bg bsm" onclick="go('patients',null)">All Patients →</button>
-        </div>
-        <div id="recentVisits"></div>
-      </div>
-      <div class="card">
-        <h3 class="mb12">Top Patients</h3>
-        <div id="dashTopPts"></div>
-      </div>
-    </div>
+    <!-- Pending Bookings -->
+    <div id="dashBookings"></div>
 
   </div><!-- /#pg-dashboard -->
 
@@ -386,31 +359,43 @@
       </div>
       <div class="flex ic g8">
         <input type="month" id="reportMonthPicker" class="rpt-month-pick" onchange="renderReport()"/>
+        <button class="btn bg bsm" onclick="saveReportImage()" title="Save report as image">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Save
+        </button>
       </div>
     </div>
 
-    <!-- KPI cards -->
-    <div id="reportKPIs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;margin-top:16px"></div>
+    <div id="reportContent">
+      <!-- KPI cards -->
+      <div id="reportKPIs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;margin-top:16px"></div>
 
-    <!-- Summary line -->
-    <div class="card mb12" id="reportSummary"></div>
+      <!-- Summary line -->
+      <div class="card mb12" id="reportSummary"></div>
 
-    <!-- Charts row -->
-    <div class="dash-grid mb14">
-      <div class="card">
-        <h3 class="mb12">Daily Revenue</h3>
-        <div id="reportChart"></div>
+      <!-- Charts row -->
+      <div class="dash-grid mb14">
+        <div class="card">
+          <h3 class="mb12">Daily Revenue</h3>
+          <div id="reportChart"></div>
+        </div>
+        <div class="card">
+          <h3 class="mb12">Top Services</h3>
+          <div id="reportTopSvcs"></div>
+        </div>
       </div>
-      <div class="card">
-        <h3 class="mb12">Top Services</h3>
-        <div id="reportTopSvcs"></div>
-      </div>
-    </div>
 
-    <!-- Top patients -->
-    <div class="card">
-      <h3 class="mb12">Top Patients This Month</h3>
-      <div id="reportTopPts"></div>
+      <!-- Top patients -->
+      <div class="card">
+        <h3 class="mb12">Top Patients This Month</h3>
+        <div id="reportTopPts"></div>
+      </div>
+
+      <!-- Recent visits -->
+      <div class="card mt12">
+        <h3 class="mb12">Recent Visits This Month</h3>
+        <div id="reportRecentVisits"></div>
+      </div>
     </div>
   </div><!-- /#pg-report -->
 

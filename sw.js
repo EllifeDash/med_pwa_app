@@ -120,7 +120,33 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// ── Skip waiting on update ─────────────
+// ── Skip waiting on update + Notifications ─
 self.addEventListener('message', e => {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data?.type === 'new_booking') {
+    self.registration.showNotification(e.data.title, {
+      body: e.data.body,
+      tag: e.data.tag || 'new-booking',
+      icon: './manifest.json',
+      badge: './manifest.json',
+      data: { url: '/' },
+      vibrate: [200, 100, 200],
+    });
+  }
+});
+
+// ── Handle notification click ──────────
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      if (clientList.length > 0) {
+        const client = clientList[0];
+        client.focus();
+        client.postMessage({ type: 'navigate', page: 'bookings' });
+      } else {
+        clients.openWindow('/');
+      }
+    })
+  );
 });

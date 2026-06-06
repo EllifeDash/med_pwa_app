@@ -188,4 +188,37 @@ async function renderReport() {
         <div class="rpt-sum-lbl">Total patients</div>
       </div>
     </div>`;
+
+  // ── Recent visits this month ───────────
+  const rec = [...vis].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time)).slice(0, 6);
+  document.getElementById('reportRecentVisits').innerHTML = rec.length
+    ? rec.map(v => `
+        <div class="hi" style="cursor:pointer;margin-bottom:8px" onclick="openHistory('${v.patientId}')">
+          <div class="hd">${fmtDate(v.date)} ${v.time || ''}</div>
+          <div class="hs">${v.patientName}</div>
+          <div class="hn">${(v.services || []).map(sv => sv.name).join(', ')}</div>
+          <div class="ha">Rs. ${(v.net || 0).toLocaleString()}</div>
+        </div>`).join('')
+    : `<div class="empty" style="padding:12px 0"><p style="font-size:13px">No visits this month</p></div>`;
+}
+
+// ── Save report as image ────────────────
+async function saveReportImage() {
+  const el = document.getElementById('reportContent');
+  if (!el) return;
+  try {
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#eef2f7' });
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href = url;
+      a.download = 'Report_' + Date.now() + '.jpg';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Report saved to device!');
+    }, 'image/jpeg', 0.95);
+  } catch (err) {
+    console.error('[report] save error:', err);
+    toast('Failed to save report image.', 'danger');
+  }
 }

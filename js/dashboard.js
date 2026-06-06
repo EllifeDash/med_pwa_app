@@ -267,76 +267,59 @@ async function renderDash() {
       <div class="kpi-v" style="font-size:20px;color:var(--warn)">Rs.&nbsp;${discount.toLocaleString()}</div>
     </div>`;
 
-  // ── Chart title ────────────────────────
-  const chartTitles = {
-    today:  'Hourly Revenue — Today',
-    week:   'Daily Revenue — This Week',
-    month:  'Daily Revenue — This Month',
-    year:   'Monthly Revenue — This Year',
-    all:    'All-Time Revenue',
-    custom: customStart && customEnd
-      ? `Revenue: ${fmtDate(customStart)} – ${fmtDate(customEnd)}`
-      : 'Custom Range',
-  };
-  document.getElementById('dashChartTitle').textContent = chartTitles[dashRange] || 'Revenue Trend';
-  document.getElementById('dashChartBadge').textContent = `Rs. ${revenue.toLocaleString()}`;
-  document.getElementById('dashChart').innerHTML = buildSvgBarChart(buildChartData(vis, dashRange));
+  // ── Pending Bookings ───────────────────
+  renderDashBookings();
+}
 
-  // ── Top services ───────────────────────
-  const svcMap = {};
-  vis.forEach(v => (v.services || []).forEach(sv => { svcMap[sv.name] = (svcMap[sv.name] || 0) + 1; }));
-  const topSvcs = Object.entries(svcMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const maxSvc  = topSvcs[0]?.[1] || 1;
-  document.getElementById('dashTopSvcs').innerHTML = topSvcs.length
-    ? topSvcs.map(([name, cnt]) => `
-        <div class="sbar-row">
-          <div class="sbar-top">
-            <span class="sbar-name">${name}</span>
-            <span class="sbar-cnt">${cnt}×</span>
-          </div>
-          <div class="sbar-track">
-            <div class="sbar-fill" style="width:${Math.round((cnt / maxSvc) * 100)}%"></div>
-          </div>
-        </div>`).join('')
-    : `<div class="empty" style="padding:18px 0"><p style="font-size:13px">No services for this period</p></div>`;
+// ── Pending Bookings (dashboard) ────────
+async function renderDashBookings() {
+  const el = document.getElementById('dashBookings');
+  if (!el) return;
 
-  // ── Recent visits ──────────────────────
-  const rec = [...vis].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time)).slice(0, 6);
-  document.getElementById('recentVisits').innerHTML = rec.length
-    ? rec.map(v => `
-        <div class="hi" style="cursor:pointer;margin-bottom:8px" onclick="openHistory('${v.patientId}')">
-          <div class="hd">${fmtDate(v.date)} ${v.time || ''}</div>
-          <div class="hs">${v.patientName}</div>
-          <div class="hn">${(v.services || []).map(sv => sv.name).join(', ')}</div>
-          <div class="ha">Rs. ${(v.net || 0).toLocaleString()}</div>
-        </div>`).join('')
-    : `<div class="empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-          <rect x="9" y="3" width="6" height="4" rx="1"/>
-        </svg>
-        <p>No visits this period</p>
-        <span>Switch range or add a new visit</span>
-      </div>`;
+  // Ensure appointments cache is populated
+  const all = window._cache?.appointments;
+  if (!all || !all.length) {
+    el.innerHTML = '';
+    return;
+  }
 
-  // ── Top patients ───────────────────────
-  const ptRev = {}, ptCnt = {}, ptName = {};
-  vis.forEach(v => {
-    ptRev[v.patientId]  = (ptRev[v.patientId]  || 0) + (v.net || 0);
-    ptCnt[v.patientId]  = (ptCnt[v.patientId]  || 0) + 1;
-    ptName[v.patientId] = v.patientName;
-  });
-  const topPts  = Object.entries(ptRev).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const rankCls = ['gold', 'silver', 'bronze', '', ''];
-  document.getElementById('dashTopPts').innerHTML = topPts.length
-    ? topPts.map(([pid, rev], i) => `
-        <div class="pt-row">
-          <div class="pt-rank ${rankCls[i]}">${i + 1}</div>
-          <div style="flex:1;min-width:0">
-            <div class="pt-name">${ptName[pid] || 'Unknown'}</div>
-            <div class="pt-meta">${ptCnt[pid]} visit${ptCnt[pid] !== 1 ? 's' : ''}</div>
-          </div>
-          <div class="pt-rev">Rs.&nbsp;${rev.toLocaleString()}</div>
-        </div>`).join('')
-    : `<div class="empty" style="padding:18px 0"><p style="font-size:13px">No patient data for this period</p></div>`;
+  const pending = all.filter(a => a.status === 'pending').slice(0, 5);
+
+  el.innerHTML = `
+    <div class="card" style="margin-top:16px">
+      <div class="flex ic jb mb12">
+        <h3>Pending Bookings</h3>
+        <button class="btn bg bsm" onclick="go('bookings',null)">View All →</button>
+      </div>
+      ${pending.length
+        ? pending.map(a => {
+            const name  = a.patient_name || 'Unknown';
+            const date  = a.preferred_date ? fmtDate(a.preferred_date) : '';
+            const time  = a.preferred_time || '';
+            const when  = date && time ? `${date} | ${time}` : (date || time || 'Unscheduled');
+            const phone = a.patient_phone || '';
+            const notes = a.notes || '';
+            const waDigits = phone.replace(/\D/g, '');
+            const waNumber = waDigits.startsWith('92') ? waDigits
+              : waDigits.startsWith('0') ? '92' + waDigits.slice(1) : '92' + waDigits;
+
+            return `
+              <div class="bk-card-mini" onclick="go('bookings',null)" style="cursor:pointer">
+                <div class="flex ic jb">
+                  <div class="bk-name" style="font-size:14px">${name}</div>
+                  <span class="bdg b-amber" style="font-size:10px;padding:2px 8px">Pending</span>
+                </div>
+                <div class="bk-meta" style="font-size:12px;margin-top:1px">${when}</div>
+                <div class="flex ic g8" style="margin-top:4px">
+                  ${phone ? `<span style="font-size:13px;font-weight:500">${phone}</span>` : ''}
+                  ${phone ? `<a href="https://wa.me/${waNumber}" target="_blank" class="bk-wa-badge" style="width:24px;height:24px" title="Chat on WhatsApp">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                  </a>` : ''}
+                  ${notes ? `<span class="tsm ts" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">${notes}</span>` : ''}
+                </div>
+              </div>`;
+          }).join('<hr class="divider" style="margin:8px 0"/>')
+        : `<div class="empty" style="padding:12px 0"><p style="font-size:13px">All clear — no pending bookings</p></div>`
+      }
+    </div>`;
 }
