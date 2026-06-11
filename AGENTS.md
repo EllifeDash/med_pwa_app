@@ -1,6 +1,8 @@
 # MediAssist Pro — AGENTS.md
 
-No build step, no package.json, no npm, no framework. Direct file editing — just refresh the browser.
+Part of the Nankana Home Care 3-tier ecosystem. This is **Tier 2** (offline-first PWA for medical assistants).
+
+No build step, no package.json, no npm, no framework. Direct file editing — refresh browser.
 
 ## No lint / typecheck / test commands exist
 
@@ -8,7 +10,7 @@ Edit files, reload browser, done. Zero tooling.
 
 ## Supabase credentials go in `js/supabase.js`
 
-Lines 20-21. Not `.env` (no build process). Use the anon/public key only — never the service_role key.
+Lines 20-21. Placeholder tokens (`YOUR_SUPABASE_URL`, `YOUR_SUPABASE_ANON_KEY`). Not `.env` (no build process). Use the anon/public key only — never the service_role key.
 
 ## No login UI
 
@@ -26,7 +28,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 
 1. Add to `SHELL` array in `sw.js` (cache-first requires it)
 2. Add `<script defer src="js/yourfile.js">` **before** `init.js` in `index.html`
-3. Bump cache version in `sw.js` (currently `mediassist-v3.1`)
+3. Bump cache version in `sw.js` (currently `mediassist-v3.3`)
 
 ## Adding a new page
 
@@ -55,7 +57,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 
 ## Service Worker
 
-- Cache version: `mediassist-v3.1` in `sw.js` — bump on any file change to force re-cache
+- Cache version: `mediassist-v3.3` in `sw.js` — bump on any file change to force re-cache
 - `Promise.allSettled()` install (one CDN failure doesn't abort)
 - Supabase API (`*.supabase.co`, `*.supabase.com`) — network-only; offline returns `{data:null, error:{message:'Offline'}}`
 - App shell / JS / CDN libs — cache-first
@@ -63,7 +65,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 
 ## Running locally
 
-```bash
+```
 python -m http.server 5500
 # or npx serve .  or VS Code Live Server
 ```
