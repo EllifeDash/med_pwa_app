@@ -19,7 +19,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 ## Script load order (enforced by `index.html`)
 
 1. `supabase.js` — ES module (runs first per browser spec)
-2. `db.js`, `utils.js`, `ui.js`, `nav.js`, `dashboard.js`, `patients.js`, `history.js`, `visits.js`, `receipt.js`, `report.js`, `settings.js`, `offline.js`, `bookings.js`, `init.js` — all `defer` in this exact order
+2. `db.js`, `utils.js`, `ui.js`, `nav.js`, `dashboard.js`, `patients.js`, `pending-patients.js`, `history.js`, `visits.js`, `receipt.js`, `report.js`, `settings.js`, `offline.js`, `bookings.js`, `init.js` — all `defer` in this exact order
 3. Inline micro-script — swipe-back, ripple, toast
 
 `init.js` must be the LAST defer — it exposes `bootApp()` / `showAccessDenied()` to `window.*`.
@@ -43,7 +43,9 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 - **`supabase.js`** (module) — creates Supabase client, checks session, calls `bootApp()` or `showAccessDenied()`
 - **`db.js`** — data layer. Three-level read: `window._cache` → Supabase (saves to IDB) → IDB fallback. Getters: `gSet()`, `gPts()`, `gVis()`, `gSvc()`, `gHistNotes()`
 - **`offline.js`** — queue + sync. `addToOfflineQueue()`, `syncOfflineQueue()`, `refreshAllData()`
-- **`bookings.js`** — appointments with concurrency-safe `updateAppointment()` ("First Responder Wins" via `.eq('status','pending')`), WhatsApp URL builder
+- **`bookings.js`** — appointments with concurrency-safe `updateAppointment()` ("First Responder Wins" via `.eq('status','pending')`), WhatsApp URL builder. `handleAccept()` now stages an inactive patient row (`is_active: false`) with the booking ref.
+- **`pending-patients.js`** — renders staged inactive patients below the Bookings page list. Provides `openPendingPatient()` (→ Add Visit pre-fill) and `discardPendingPatient()` (delete from DB + cache).
+- **`visits.js`** — `saveVisit()` flips `is_active: true` on staged patients after successful save. `prefillFromPendingPatient()` fills the form from a staged record.
 
 ## Critical: `_teardownChannels()` ≠ `clearListeners()`
 
@@ -78,7 +80,7 @@ GitHub → Netlify. No build command. Publish directory = `.`. Auto-deploys on p
 
 ## Supabase tables
 
-`settings` (1 row/user), `patients`, `visits` (services as JSONB), `services`, `hist_notes`, `appointments`. All have RLS `WHERE auth.uid() = user_id`. Auto `user_id` INSERT trigger.
+`settings` (1 row/user), `patients` (has `is_active BOOLEAN DEFAULT true`, `booking_ref TEXT`), `visits` (services as JSONB), `services`, `hist_notes`, `appointments`. All have RLS `WHERE auth.uid() = user_id`. Auto `user_id` INSERT trigger.
 
 ## VS Code setting
 

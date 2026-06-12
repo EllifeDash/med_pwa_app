@@ -65,23 +65,24 @@ Browser
 ## 2. File Map & Load Order
 
 ```
-supabase.js  [module]  — runs FIRST per HTML spec (modules before defer)
-db.js        [defer]
-utils.js     [defer]
-ui.js        [defer]
-nav.js       [defer]
-dashboard.js [defer]
-patients.js  [defer]
-history.js   [defer]
-visits.js    [defer]
-receipt.js   [defer]
-report.js    [defer]
-bookings.js  [defer]
-settings.js  [defer]
-offline.js   [defer]
-init.js      [defer]   — LAST; exposes bootApp/showAccessDenied to window.*
-html2canvas  [defer]   — CDN, receipt image export
-micro-script [inline]  — ripple, toast, swipe-back gesture
+supabase.js      [module]  — runs FIRST per HTML spec (modules before defer)
+db.js            [defer]
+utils.js         [defer]
+ui.js            [defer]
+nav.js           [defer]
+dashboard.js     [defer]
+patients.js      [defer]
+pending-patients.js [defer]  — Pending patient staging, rendering, discard
+history.js       [defer]
+visits.js        [defer]    — prefillFromPendingPatient() + is_active flip
+receipt.js       [defer]
+report.js        [defer]
+bookings.js      [defer]    — handleAccept() now stages inactive patient
+settings.js      [defer]
+offline.js       [defer]
+init.js          [defer]    — LAST; exposes bootApp/showAccessDenied to window.*
+html2canvas      [defer]    — CDN, receipt image export
+micro-script     [inline]   — ripple, toast, swipe-back gesture
 ```
 
 ---
@@ -218,7 +219,7 @@ Notifications require `Notification.requestPermission()` — called once in `ent
 | Table | PK | Purpose |
 |---|---|---|
 | `settings` | `user_id` UUID | One row per user — profile, branding |
-| `patients` | `id` TEXT | Patient records |
+| `patients` | `id` TEXT | Patient records — has `is_active` (bool) and `booking_ref` (text) columns |
 | `visits` | `id` TEXT | Visit records — `services` is JSONB |
 | `services` | `id` TEXT | Per-user service catalogue (`"${uid}_${svcId}"`) |
 | `hist_notes` | `id` TEXT | Medical history notes per patient |
@@ -227,6 +228,13 @@ Notifications require `Notification.requestPermission()` — called once in `ent
 All tables except `appointments`: `user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE`
 
 `appointments` columns: `id`, `created_at`, `patient_name`, `patient_phone`, `patient_age`, `patient_gender`, `patient_address`, `requested_service`, `preferred_date`, `preferred_time`, `notes`, `status` (default `'pending'`), `admin_comment`, `handled_by`, `handled_at`.
+
+### Patients table extra columns
+
+| Column | Type | Default | Purpose |
+|---|---|---|---|
+| `is_active` | `BOOLEAN` | `true` | Soft-active flag. `false` = staged from booking, not yet completed. Filtered out of the main Patients page; shown under Pending Patients on the Bookings page. |
+| `booking_ref` | `TEXT` | `NULL` | The `appointments.id` from which this patient was staged. Set only for inactive/staged records. |
 
 ### RLS policy (on all 5 internal tables)
 ```sql
@@ -261,9 +269,9 @@ go(pg, btn)  // nav.js — shows page, updates nav .on class, calls render fn
 | Page | Render function | Back destination |
 |---|---|---|
 | `dashboard` | `renderDash()` (KPIs + `renderDashBookings()`) | — |
-| `patients` | `renderPatients()` | dashboard |
-| `bookings` | `renderBookings()` (full filter + expand/collapse) | dashboard |
-| `addVisit` | `renderSvcTags()` | dashboard |
+| `patients` | `renderPatients()` — filters out `is_active === false` | dashboard |
+| `bookings` | `renderBookings()` (full filter + expand/collapse) + `renderPendingPatients()` below | dashboard |
+| `addVisit` | `renderSvcTags()` + optional `prefillFromPendingPatient()` | dashboard |
 | `history` | `openHistory(pid)` | patients |
 | `report` | `initReport()` | dashboard |
 | `settings` | `renderSettings()` | dashboard |
@@ -293,10 +301,15 @@ Swipe-back gesture reads `_backMap` in the micro-script inline block.
 | `applyCustomRange()` | dashboard.js | Validate & apply custom date range |
 | `renderDashBookings()` | dashboard.js | Render pending bookings list below dashboard KPIs |
 | `renderBookings(force)` | bookings.js | Full bookings page — filters, expand/collapse, accept/reject |
-| `handleAccept(id)` | bookings.js | Accept booking → update DB + open WhatsApp confirmation |
+| `handleAccept(id)` | bookings.js | Accept booking → stage inactive patient row → update DB → open WhatsApp confirmation |
 | `updateAppointment(id, action)` | bookings.js | Concurrency-safe status update (pending → accepted/rejected/rescheduled) |
 | `listenToAppointments(cb)` | bookings.js | Supabase Realtime channel for appointments table |
 | `buildWhatsAppURL(appt, name)` | bookings.js | Build wa.me link with confirmation message |
+| **`renderPendingPatients()`** | pending-patients.js | Render staged inactive patients below the bookings list |
+| **`openPendingPatient(id)`** | pending-patients.js | Navigate to Add Visit with pre-filled data from a staged patient |
+| **`discardPendingPatient(id)`** | pending-patients.js | Delete a staged patient from DB + cache |
+| **`getPendingPatients()`** | pending-patients.js | Filter `_cache.patients` for `is_active === false` |
+| **`prefillFromPendingPatient(pt)`** | visits.js | Fill Add Visit form fields from a staged patient object, show banner |
 
 ---
 

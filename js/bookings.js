@@ -84,6 +84,30 @@ async function handleAccept(appointmentId) {
   const ok = await updateAppointment(appointmentId, 'accepted');
   if (!ok) return;
 
+  // Stage an inactive patient record from the booking data
+  try {
+    const stagedPt = {
+      id:          'p_' + Date.now(),
+      name:        appt.patient_name || '',
+      age:         appt.patient_age   || null,
+      gender:      appt.patient_gender || null,
+      phone:       appt.patient_phone  || '',
+      address:     appt.patient_address || '',
+      createdAt:   new Date().toISOString(),
+      is_active:   false,
+      booking_ref: appt.id,
+    };
+    await SB.from('patients').upsert(
+      { ...stagedPt, user_id: window._uid },
+      { onConflict: 'id' }
+    );
+    window._cache.patients.push({ ...stagedPt, user_id: window._uid });
+  } catch (err) {
+    console.error('[bookings] failed to stage patient:', err);
+    // Non-blocking — booking is already accepted, warn user
+    toast('Booking accepted, but could not create staged patient record.', 'danger');
+  }
+
   const s = window._cache?.settings || {};
   const name = s.name || 'Medical Attendant';
   const url = buildWhatsAppURL(appt, name);
@@ -214,6 +238,7 @@ async function renderBookings(force = false) {
         <span>${msg}</span>
       </div>
     `;
+    if (typeof renderPendingPatients === 'function') renderPendingPatients();
     return;
   }
 
@@ -273,6 +298,8 @@ async function renderBookings(force = false) {
       </div>
     `;
   }).join('');
+
+  if (typeof renderPendingPatients === 'function') renderPendingPatients();
 }
 
 function openReschedule(btn) {

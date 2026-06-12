@@ -9,6 +9,7 @@
 async function renderPatients() {
   const q   = (document.getElementById('pSearch')?.value || '').toLowerCase();
   let pts   = await gPts();
+  pts = pts.filter(p => p.is_active !== false);
   if (q) pts = pts.filter(p =>
     p.name.toLowerCase().includes(q) ||
     (p.phone   || '').includes(q)    ||

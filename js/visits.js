@@ -100,6 +100,20 @@ async function prefillPt(id) {
   }, 60);
 }
 
+function prefillFromPendingPatient(pt) {
+  activePtId = pt.id;
+  setTimeout(() => {
+    document.getElementById('fName').value   = pt.name   || '';
+    document.getElementById('fAge').value    = pt.age    || '';
+    document.getElementById('fGender').value = pt.gender || '';
+    document.getElementById('fPhone').value  = pt.phone  || '';
+    document.getElementById('fAddr').value   = pt.address || '';
+    const b = document.getElementById('existingBanner');
+    b.style.display = 'block';
+    b.innerHTML = `<strong>${pt.name}</strong> — completing staged record. Fill remaining details and save.`;
+  }, 60);
+}
+
 function resetForm() {
   ['fName','fAge','fPhone','fAddr','fNotes','fDisc'].forEach(id =>
     document.getElementById(id).value = ''
@@ -177,6 +191,8 @@ async function saveVisit() {
     // ── OFFLINE BRANCH ────────────────────
     // If no internet, queue locally and show receipt from cache data.
     if (!navigator.onLine) {
+      // If this was a staged inactive patient, flag for activation on sync
+      if (pt.is_active === false) pt._pendingActivate = true;
       await addToOfflineQueue({ pt, v });
       // Add to in-memory cache so receipt preview works
       const cachedPt = window._cache.patients.find(p => p.id === pt.id);
@@ -190,6 +206,8 @@ async function saveVisit() {
     }
 
     // ── ONLINE BRANCH ─────────────────────
+    // Upsert patient — include is_active so staged records get activated
+    pt.is_active = true;
     const { error: ptErr } = await SB.from('patients')
       .upsert({ ...pt, user_id: uid }, { onConflict: 'id' });
     if (ptErr) throw ptErr;
@@ -206,6 +224,7 @@ async function saveVisit() {
     toast('Visit saved!');
     previewReceipt(v.id);
     resetForm();
+    if (typeof renderPendingPatients === 'function') renderPendingPatients();
   } catch (err) {
     console.error('saveVisit error:', err);
     toast('Error saving visit', 'danger');

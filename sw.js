@@ -10,7 +10,7 @@
 //   Navigation fallback  → index.html
 // ════════════════════════════════════════
 
-const CACHE   = 'mediassist-v3.3';
+const CACHE   = 'mediassist-v3.4';
 const CDN_SB  = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const CDN_H2C = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
 
@@ -28,6 +28,7 @@ const SHELL = [
   './js/nav.js',
   './js/dashboard.js',
   './js/patients.js',
+  './js/pending-patients.js',
   './js/history.js',
   './js/visits.js',
   './js/receipt.js',

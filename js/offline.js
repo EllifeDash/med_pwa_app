@@ -69,6 +69,12 @@ async function syncOfflineQueue() {
     try {
       const { _queuedAt, ...clean } = item;
 
+      // If this was a pending patient being activated, ensure is_active = true
+      if (clean.pt?._pendingActivate) {
+        clean.pt.is_active = true;
+        delete clean.pt._pendingActivate;
+      }
+
       // Upsert patient
       const { error: ptErr } = await SB.from('patients')
         .upsert({ ...clean.pt, user_id: window._uid }, { onConflict: 'id' });
@@ -102,6 +108,7 @@ async function syncOfflineQueue() {
     if (typeof renderDash === 'function') renderDash();
     if (document.getElementById('pg-patients')?.style.display !== 'none')
       if (typeof renderPatients === 'function') renderPatients();
+    if (typeof renderPendingPatients === 'function') renderPendingPatients();
   }
   if (failed.length > 0) {
     toast(`${failed.length} visit${failed.length > 1 ? 's' : ''} failed to sync`, 'danger');
@@ -137,6 +144,7 @@ async function refreshAllData() {
     if (typeof renderDash === 'function') renderDash();
     if (document.getElementById('pg-patients')?.style.display !== 'none')
       if (typeof renderPatients === 'function') renderPatients();
+    if (typeof renderPendingPatients === 'function') renderPendingPatients();
 
     console.info('[offline] Data refreshed from Supabase after reconnect');
   } catch (err) {

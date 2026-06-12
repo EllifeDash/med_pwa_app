@@ -206,6 +206,16 @@
       <button class="dpill"    data-filter="rejected"   onclick="setBookingFilter('rejected',this)">Rejected</button>
     </div>
     <div id="bookingsList"></div>
+
+    <!-- ═══════ PENDING PATIENTS (staged from accepted bookings) ═══════ -->
+    <div id="pendingPatientsSection" style="margin-top:24px;display:none">
+      <div class="flex ic jb mb12">
+        <h3>Pending Patients</h3>
+        <span class="tsm ts">Staged from accepted bookings — complete or discard</span>
+      </div>
+      <div id="pendingPatientsList"></div>
+    </div>
+
   </div><!-- /#pg-bookings -->
 
 
@@ -674,6 +684,7 @@
 <script defer src="js/nav.js"></script>
 <script defer src="js/dashboard.js"></script>
 <script defer src="js/patients.js"></script>
+<script defer src="js/pending-patients.js"></script>
 <script defer src="js/history.js"></script>
 <script defer src="js/visits.js"></script>
 <script defer src="js/receipt.js"></script>
