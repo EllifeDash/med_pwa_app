@@ -89,9 +89,12 @@ micro-script     [inline]   — ripple, toast, swipe-back gesture
 
 ## 3. Auth & Offline Boot
 
+### Boot sequence
+Deferred scripts (including `init.js`) execute **before** any `DOMContentLoaded` callback. The session check is triggered by `init.js` (the last defer) via `window.__bootApp()` defined in `supabase.js`.
+
 ### Online boot
 ```
-getSession() → session.user exists
+init.js → __bootApp() → getSession() → session.user exists
   → window._uid = user.id
   → saveUid(uid)      ← persists to localStorage for offline use
   → bootApp(user)
@@ -99,7 +102,7 @@ getSession() → session.user exists
 
 ### Offline boot
 ```
-getSession() → no session (or throws)
+init.js → __bootApp() → getSession() → no session (or throws)
   → navigator.onLine === false
   → loadUid() from localStorage → uid found
   → window._uid = storedUid

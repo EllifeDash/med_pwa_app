@@ -26,13 +26,11 @@ const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.SB   = _sb;
 window._uid = null;
 
-// ── Silent session check on every page load ──
-// getSession() reads the token from localStorage instantly —
-// no network round-trip, no flicker.
-// bootApp / showAccessDenied are defined in init.js (deferred,
-// already executed by the time this async callback runs).
-
-(async () => {
+// ── Boot helper — called by init.js (last defer) ──
+// Module scripts execute before defer scripts, so the
+// session check must be deferred to init.js where
+// bootApp / showAccessDenied are defined.
+window.__bootApp = async function () {
   const { data: { session } } = await _sb.auth.getSession();
 
   if (session?.user) {
@@ -42,7 +40,7 @@ window._uid = null;
     window._uid = null;
     window.showAccessDenied();
   }
-})();
+};
 
 // ── Ongoing state watcher ─────────────────
 // Handles token refresh (keeps long sessions alive)

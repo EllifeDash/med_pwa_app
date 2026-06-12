@@ -10,7 +10,7 @@
 // ════════════════════════════════════════
 
 /**
- * Called by supabase.js after a valid session is confirmed.
+ * Called by __bootApp() (supabase.js) after a valid session is confirmed.
  * Loads profile from Supabase and populates the welcome screen.
  */
 async function bootApp(user) {
@@ -109,4 +109,11 @@ function enterApp() {
  */
 function logout() {
   authSignOut(); // defined in supabase.js
+}
+
+// ── Boot: session check — runs after all deferred scripts have loaded ──
+// init.js is the last defer script, so bootApp / showAccessDenied are
+// guaranteed to be on window by this point.
+if (typeof window.__bootApp === 'function') {
+  window.__bootApp();
 }
