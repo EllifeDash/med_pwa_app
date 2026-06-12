@@ -35,10 +35,10 @@ window.__bootApp = async function () {
 
   if (session?.user) {
     window._uid = session.user.id;
-    await window.bootApp(session.user);
+    if (typeof window.bootApp === 'function') await window.bootApp(session.user);
   } else {
     window._uid = null;
-    window.showAccessDenied();
+    if (typeof window.showAccessDenied === 'function') window.showAccessDenied();
   }
 };
 
@@ -54,7 +54,7 @@ _sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT') {
     window._uid = null;
     if (typeof clearListeners === 'function') clearListeners();
-    window.showAccessDenied();
+    if (typeof window.showAccessDenied === 'function') window.showAccessDenied();
   }
 });
 
