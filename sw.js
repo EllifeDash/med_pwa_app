@@ -109,7 +109,8 @@ self.addEventListener('fetch', e => {
       // Not cached yet — fetch and cache it
       return fetch(e.request).then(res => {
         if (e.request.method === 'GET' && res.status === 200) {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          const cc = res.clone();
+          caches.open(CACHE).then(c => { try { c.put(e.request, cc); } catch (_) {} }).catch(() => {});
         }
         return res;
       }).catch(() => {

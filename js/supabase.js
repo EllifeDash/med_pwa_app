@@ -17,8 +17,8 @@ import { createClient }
 // ⚠️  REPLACE WITH YOUR SUPABASE CREDENTIALS
 // Supabase Dashboard → Project Settings → API
 // ─────────────────────────────────────────
-const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL      = 'https://gkfotrghyydydbfoakaq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZm90cmdoeXlkeWRiZm9ha2FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzk4MzEsImV4cCI6MjA5Mjg1NTgzMX0.sXZRa4tO8AkUQ-Sn34rqjatlLCXbt7dRrdi9qcq1-Lc';
 
 const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
