@@ -2,8 +2,8 @@
 // js/pending-patients.js — Pending Patients
 //
 // Manages inactive patient records staged
-// from accepted bookings. Renders below the
-// Bookings page. Supports complete (→addVisit)
+// from accepted bookings. Renders on the
+// Dashboard page. Supports complete (→addVisit)
 // or discard (delete) flow.
 // ════════════════════════════════════════
 
@@ -37,7 +37,7 @@ function renderPendingPatients() {
     const ageGender = [p.age ? p.age + ' yrs' : '', p.gender || ''].filter(Boolean).join(' · ');
 
     return `
-      <div class="card bk-card pp-card">
+      <div class="card bk-card pp-card bk-open">
         <div class="bk-top">
           <div class="bk-top-info">
             <div class="bk-name">${p.name}</div>

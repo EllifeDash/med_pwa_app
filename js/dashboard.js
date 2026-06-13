@@ -269,6 +269,9 @@ async function renderDash() {
 
   // ── Pending Bookings ───────────────────
   renderDashBookings();
+
+  // ── Pending Patients ───────────────────
+  if (typeof renderPendingPatients === 'function') renderPendingPatients();
 }
 
 // ── Pending Bookings (dashboard) ────────

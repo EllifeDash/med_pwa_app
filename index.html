@@ -173,6 +173,15 @@
     <!-- Pending Bookings -->
     <div id="dashBookings"></div>
 
+    <!-- ═══════ PENDING PATIENTS (staged from accepted bookings) ═══════ -->
+    <div id="pendingPatientsSection" style="margin-top:24px;display:none">
+      <div class="flex ic jb mb12">
+        <h3>Pending Patients</h3>
+        <span class="tsm ts">Staged from accepted bookings — complete or discard</span>
+      </div>
+      <div id="pendingPatientsList"></div>
+    </div>
+
   </div><!-- /#pg-dashboard -->
 
 
@@ -207,15 +216,6 @@
       <button class="dpill"    data-filter="rejected"   onclick="setBookingFilter('rejected',this)">Rejected</button>
     </div>
     <div id="bookingsList"></div>
-
-    <!-- ═══════ PENDING PATIENTS (staged from accepted bookings) ═══════ -->
-    <div id="pendingPatientsSection" style="margin-top:24px;display:none">
-      <div class="flex ic jb mb12">
-        <h3>Pending Patients</h3>
-        <span class="tsm ts">Staged from accepted bookings — complete or discard</span>
-      </div>
-      <div id="pendingPatientsList"></div>
-    </div>
 
   </div><!-- /#pg-bookings -->
 
