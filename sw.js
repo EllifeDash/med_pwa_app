@@ -10,7 +10,7 @@
 //   Navigation fallback  → index.html
 // ════════════════════════════════════════
 
-const CACHE   = 'mediassist-v3.5';
+const CACHE   = 'mediassist-v3.6';
 const CDN_SB  = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const CDN_H2C = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
 
