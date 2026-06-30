@@ -171,7 +171,7 @@ async function updSvc(svcId, field, value) {
 }
 
 async function delSvc(svcId) {
-  if (!confirm('Remove this service?')) return;
+  if (!await showConfirm('Remove this service?')) return;
   try {
     // CHANGED: delete from Supabase services table
     const { error } = await SB.from('services')

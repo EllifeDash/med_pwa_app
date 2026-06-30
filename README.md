@@ -43,8 +43,8 @@ mediassist/
 │   ├── db.js               # Data layer — Supabase + IndexedDB fallback
 │   ├── init.js             # bootApp(), enterApp(), showAccessDenied()
 │   ├── nav.js              # go() router — page navigation
-│   ├── ui.js               # openMo() / closeMo() modal helpers
-│   ├── utils.js            # fmtDate(), toast(), exportCSV()
+│   ├── ui.js               # openMo() / closeMo() / showConfirm() modal helpers
+│   ├── utils.js            # fmtDate(), fmtFileSize(), exportCSV()
 │   ├── dashboard.js        # KPIs, custom date range, pending bookings
 │   ├── patients.js         # Patient list (filters out is_active=false), deletePatient()
 │   ├── pending-patients.js # Staged inactive patients — render, complete (→addVisit), discard
@@ -54,8 +54,7 @@ mediassist/
 │   ├── report.js           # Monthly summary, saveReportImage()
 │   ├── bookings.js         # Appointment management, realtime, WhatsApp
 │   ├── settings.js         # Profile, logo, service CRUD
-│   ├── offline.js          # Queue management, sync, reconnect
-│   └── books.js            # (in development)
+│   └── offline.js          # Queue management, sync, reconnect
 ├── AGENTS.md
 └── README.md
 ```

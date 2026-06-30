@@ -161,7 +161,18 @@ function _applyApptChange(payload) {
     if (!arr.find(x => x.id === payload.new.id)) arr.unshift(payload.new);
   } else if (payload.eventType === 'UPDATE') {
     const i = arr.findIndex(x => x.id === payload.new.id);
-    if (i > -1) arr[i] = payload.new; else arr.unshift(payload.new);
+    if (i > -1) {
+      const old = arr[i];
+      arr[i] = payload.new;
+      // Alert if another assistant actioned a pending booking
+      if (old.status === 'pending' && payload.new.status !== 'pending' &&
+          payload.new.handled_by && payload.new.handled_by !== window._uid) {
+        const labels = { accepted: 'accepted', rejected: 'rejected', rescheduled: 'rescheduled' };
+        toast(`This booking was ${labels[payload.new.status] || 'updated'} by another assistant.`);
+      }
+    } else {
+      arr.unshift(payload.new);
+    }
   } else if (payload.eventType === 'DELETE') {
     const i = arr.findIndex(x => x.id === payload.old.id);
     if (i > -1) arr.splice(i, 1);

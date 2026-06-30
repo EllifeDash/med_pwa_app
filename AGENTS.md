@@ -29,7 +29,11 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 
 1. Add to `SHELL` array in `sw.js` (includes CDN URLs `CDN_SB`, `CDN_H2C` which are cache-first)
 2. Add `<script defer src="js/yourfile.js">` **before** `init.js` in `index.html`
-3. Bump cache version in `sw.js` (currently `mediassist-v3.5`)
+3. Bump cache version in `sw.js` (currently `mediassist-v3.9`)
+
+## Confirm dialog
+
+Use `await showConfirm('message')` in any async function instead of `confirm()`. The modal HTML is in `index.html` (id `confirmModal`), the function is in `ui.js`. Avoids mobile-native confirm's tiny unpadded dialog.
 
 ## Adding a new page
 
@@ -48,7 +52,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 - **`bookings.js`** — appointments with concurrency-safe `updateAppointment()` ("First Responder Wins" via `.eq('status','pending')` — if `count===0` another assistant claimed it). WhatsApp URL builder (`buildWhatsAppURL()`). `handleAccept()` stages an inactive patient row (`is_active: false`) with the booking ref via `patients` upsert. Realtime channel on `appointments` table (global, no user_id filter — all assistants see all bookings). Push notifications via Service Worker `postMessage({type:'new_booking',...})`.
 - **`pending-patients.js`** — renders staged inactive patients in `#pendingPatientsSection` (inside `#pg-dashboard`, NOT on the Bookings page). Provides `openPendingPatient()` (→ Add Visit pre-fill) and `discardPendingPatient()` (delete from DB + cache). Also called from `renderBookings()` (line 302).
 - **`visits.js`** — `saveVisit()` flips `is_active: true` on staged patients after successful save. Offline branch adds `_pendingActivate` flag. `prefillFromPendingPatient()` fills the form from a staged record.
-- **`history.js`** — handles patient profile photos (`handlePatientPhoto` stores base64 in IDB), documents (PDF/images stored locally in IDB keyed `ma_docs_{pid}`), medical history notes (`hist_notes` table — not cached offline).
+- **`history.js`** — handles patient profile photos (`handlePatientPhoto` stores base64 in IDB), documents (PDF/images stored locally in IDB keyed `ma_docs_{pid}`), medical history notes (`hist_notes` table — cached offline in IDB key `ma_hist_notes_{pid}`).
 - **`init.js`** — `bootApp()` populates welcome screen from settings, pre-fills today's date/time on visit form. `showAccessDenied()` shows locked screen + hides app. `enterApp()` requests notification permission, listens for SW navigation messages.
 
 ## Critical: `_teardownChannels()` ≠ `clearListeners()`
@@ -63,7 +67,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 
 ## Service Worker
 
-- Cache version: `mediassist-v3.5` in `sw.js` — bump on any file change to force re-cache
+- Cache version: `mediassist-v3.9` in `sw.js` — bump on any file change to force re-cache
 - `caches.open(CACHE).then(c => c.addAll(SHELL))` (NOT `Promise.allSettled()` as documented before — install failure `catch` handles partial failure)
 - `SHELL` array includes `'./'`, `'./index.html'`, `'./style.css'`, `'./manifest.json'`, all `./js/*.js`, `CDN_SB` (Supabase ESM), `CDN_H2C` (html2canvas)
 - Supabase API (`*.supabase.co`, `*.supabase.com`) — network-only; offline returns `{data:null, error:{message:'Offline'}}`
@@ -99,7 +103,7 @@ Hardcoded in `db.js` as `DEFAULT_SVC`. Auto-seeded on first login if the service
 
 ## Offline IDB keys
 
-`ma_cache_settings`, `ma_cache_patients`, `ma_cache_visits`, `ma_cache_services`, `ma_offline_queue`, `ma_docs_{patientId}`. DB name: `mediassist_docs` (backward compat — do not rename). IndexedDB version: 2 (single `kv` store).
+`ma_cache_settings`, `ma_cache_patients`, `ma_cache_visits`, `ma_cache_services`, `ma_offline_queue`, `ma_docs_{patientId}`, `ma_hist_notes_{patientId}`. DB name: `mediassist_docs` (backward compat — do not rename). IndexedDB version: 2 (single `kv` store).
 
 ## Settings row defaults
 

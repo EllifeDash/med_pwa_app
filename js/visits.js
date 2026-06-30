@@ -56,9 +56,9 @@ async function renderSvcTable() {
 
 function calcTotal() {
   const sub  = Object.values(selSvcs).reduce((a, b) => a + (+b || 0), 0);
-  const disc = +(document.getElementById('fDisc')?.value || 0);
+  const disc = Math.min(sub, Math.max(0, +(document.getElementById('fDisc')?.value || 0)));
   document.getElementById('vTotal').textContent = 'Rs. ' + sub.toLocaleString();
-  document.getElementById('vNet').textContent   = 'Rs. ' + Math.max(0, sub - disc).toLocaleString();
+  document.getElementById('vNet').textContent   = 'Rs. ' + (sub - disc).toLocaleString();
 }
 
 // ── Patient autocomplete ──────────────────
@@ -169,7 +169,7 @@ async function saveVisit() {
     }
 
     const sub  = Object.values(selSvcs).reduce((a, b) => a + (+b || 0), 0);
-    const disc = +(document.getElementById('fDisc').value || 0);
+    const disc = Math.min(sub, Math.max(0, +(document.getElementById('fDisc').value || 0)));
 
     const v = {
       id:          'v_' + Date.now(),

@@ -220,16 +220,24 @@ async function gSvc() {
 }
 
 async function gHistNotes(pid) {
+  const cacheKey = 'ma_hist_notes_' + pid;
+
   if (navigator.onLine) {
     try {
       const { data, error } = await SB.from('hist_notes')
         .select('*').eq('user_id', window._uid).eq('patientId', pid);
-      if (!error) return data || [];
+      if (!error) {
+        const notes = data || [];
+        IDB.set(cacheKey, notes); // non-blocking persist
+        return notes;
+      }
     } catch (err) {
-      console.warn('[db] gHistNotes network fail:', err.message);
+      console.warn('[db] gHistNotes network fail, trying IDB:', err.message);
     }
   }
-  return []; // history notes not cached offline (acceptable trade-off)
+
+  const cached = await IDB.get(cacheKey);
+  return cached || [];
 }
 
 async function gDocs(pid) {

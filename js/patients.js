@@ -76,7 +76,7 @@ async function renderPatients() {
  * Documents (base64) are cleared from IndexedDB separately.
  */
 async function deletePatient(id) {
-  if (!confirm('Delete this patient and ALL their visits, history notes, and documents? This cannot be undone.')) return;
+  if (!await showConfirm('Delete this patient and ALL their visits, history notes, and documents? This cannot be undone.')) return;
 
   try {
     // Delete all hist_notes for this patient

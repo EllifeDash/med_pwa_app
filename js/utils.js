@@ -17,16 +17,6 @@ function fmtFileSize(b) {
   return (b / 1024 / 1024).toFixed(1) + 'MB';
 }
 
-let _toastTimer;
-function toast(msg, type = 'ok') {
-  const el = document.getElementById('toast');
-  el.textContent      = msg;
-  el.style.background = type === 'danger' ? '#ef4444' : '#1a2332';
-  el.style.opacity    = 1;
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.style.opacity = 0, 2600);
-}
-
 /**
  * ADDED: Export all visits to a CSV file.
  * One row per service line within a visit so every

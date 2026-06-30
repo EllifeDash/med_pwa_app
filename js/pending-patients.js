@@ -77,7 +77,7 @@ async function openPendingPatient(id) {
 }
 
 async function discardPendingPatient(id) {
-  if (!confirm('Discard this staged patient record? This cannot be undone.')) return;
+  if (!await showConfirm('Discard this staged patient record? This cannot be undone.')) return;
 
   try {
     const { error } = await SB.from('patients')

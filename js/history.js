@@ -154,7 +154,7 @@ async function saveHistNote() {
 }
 
 async function delHistNote(id) {
-  if (!confirm('Delete this note?')) return;
+  if (!await showConfirm('Delete this note?')) return;
   try {
     // CHANGED: delete from Supabase
     const { error } = await SB.from('hist_notes')
@@ -238,7 +238,7 @@ async function renderDocs() {
 }
 
 async function delDoc(id) {
-  if (!confirm('Delete this document?')) return;
+  if (!await showConfirm('Delete this document?')) return;
   const docs = (await gDocs(historyPatientId)).filter(d => d.id !== id);
   await IDB.set('ma_docs_' + historyPatientId, docs);
   renderDocs();
@@ -312,7 +312,7 @@ function renderPatientVisits(vis) {
 }
 
 async function deleteVisit(id) {
-  if (!confirm('Delete this visit record?')) return;
+  if (!await showConfirm('Delete this visit record?')) return;
   try {
     // CHANGED: delete visit row from Supabase
     const { error } = await SB.from('visits')
