@@ -95,6 +95,7 @@ async function shareWhatsApp() {
   const v   = (await gVis()).find(x => x.id === vid);
   if (!v)   return;
   const s   = await gSet();
+  const p   = (await gPts()).find(x => x.id === v.patientId) || {};
   const rno = vid.replace('v_', '').slice(-6);
 
   const serviceLines = (v.services || [])
@@ -126,6 +127,41 @@ async function shareWhatsApp() {
     '_Sent via MediAssist Pro_',
   ].filter(l => l !== null).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 
-  const url = 'https://wa.me/?text=' + encodeURIComponent(text);
-  window.open(url, '_blank', 'noopener');
+  // Patient E.164 phone (same pattern as buildWhatsAppURL)
+  const digits = (p.phone || '').replace(/\D/g, '');
+  const e164   = digits
+    ? digits.startsWith('92')
+      ? digits
+      : digits.startsWith('0')
+        ? '92' + digits.slice(1)
+        : '92' + digits
+    : '';
+
+  // Capture image then share
+  const el = document.getElementById('rcptContent');
+  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.95));
+
+  // Web Share API — image + text (works on mobile Chrome/WhatsApp)
+  if (navigator.share) {
+    try {
+      const file = new File([blob], 'Receipt_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: text, title: 'Receipt' });
+        return;
+      }
+    } catch (_) { /* fall through */ }
+  }
+
+  // Fallback: save image to device + open WhatsApp text
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = 'Receipt_' + Date.now() + '.jpg'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Receipt image saved!');
+
+  const wa = e164
+    ? 'https://wa.me/' + e164 + '?text=' + encodeURIComponent(text)
+    : 'https://wa.me/?text=' + encodeURIComponent(text);
+  window.open(wa, '_blank', 'noopener');
 }
