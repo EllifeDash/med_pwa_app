@@ -60,6 +60,60 @@ function showAccessDenied() {
   document.getElementById('accessDenied').style.display = 'flex';
   document.getElementById('ws').classList.remove('active');
   document.getElementById('app').classList.remove('active');
+  renderSessionDiag();
+}
+
+/**
+ * Session diagnostic — tiny hidden block on the locked screen.
+ * Lets the admin figure out the logout cause remotely:
+ *   • online state            → offline refresh failure?
+ *   • session in storage      → PWA/browser storage split?
+ *   • last backed-up session  → when the last good login was
+ *   • installed as PWA?       → standalone vs browser context
+ */
+async function renderSessionDiag() {
+  const wrap = document.getElementById('adDiag');
+  const box  = document.getElementById('adDiagLines');
+  if (!wrap || !box) return;
+
+  const lines = [];
+  try {
+    lines.push('online: ' + (navigator.onLine ? 'yes' : 'no'));
+
+    const tokenKey = (typeof window.__sbTokenKey === 'function')
+      ? window.__sbTokenKey()
+      : null;
+    let storedSession = null;
+    if (tokenKey) {
+      try { storedSession = JSON.parse(localStorage.getItem(tokenKey) || 'null'); }
+      catch (_) {}
+    }
+    lines.push('session in storage: ' + (storedSession ? 'yes' : 'no'));
+    if (storedSession) {
+      lines.push('user: ' + (storedSession.user?.email || storedSession.user?.id || '?'));
+      lines.push('refresh token: ' + (storedSession.refresh_token ? 'present' : 'MISSING'));
+    }
+
+    let backup = null;
+    try {
+      if (typeof IDB !== 'undefined' && IDB && IDB.get) backup = await IDB.get('ma_auth_backup');
+    } catch (_) {}
+    if (backup && backup.session) {
+      lines.push('backup: ' + (backup.session.user?.email || '?') +
+                 ' @ ' + (backup.savedAt || '?'));
+    } else {
+      lines.push('backup: none');
+    }
+
+    lines.push('mode: ' + (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+      ? 'installed app' : 'browser tab'));
+    lines.push('ua: ' + (navigator.userAgent || '?').slice(0, 60));
+  } catch (_) {
+    lines.push('diagnostic unavailable');
+  }
+
+  box.textContent = lines.join('\n');
+  wrap.style.display = 'block';
 }
 
 // Expose to window so supabase.js (module) can call them

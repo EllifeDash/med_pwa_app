@@ -202,7 +202,7 @@ The cache slots are cleared one at a time before each fetch, **not** all at once
 | Google Fonts | Network-first with cache fallback |
 
 **CDN libs cached at install:**
-- `cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`
+- `cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/+esm` (version pinned — floating `@2` froze an old build inside the SW cache)
 - `cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js`
 
 ### Push Notifications

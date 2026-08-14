@@ -625,6 +625,21 @@ label{font-size:13px;font-weight:600;color:var(--tx2);display:block;margin-botto
 .ad-title{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:10px}
 .ad-msg{font-size:14px;color:var(--tx2);line-height:1.7}
 
+/* Hidden session diagnostic (tap to hide) */
+.ad-diag{
+  margin-top:18px;padding:12px;border-radius:12px;
+  background:#0d3b5c;color:#cfe3f5;
+  text-align:left;font-size:11px;line-height:1.65;
+  font-family:Consolas,Menlo,monospace;
+  cursor:pointer;
+}
+.ad-diag-title{
+  font-weight:700;color:#7ec8f7;margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.08em;
+  font-size:10px;
+}
+.ad-diag-lines{white-space:pre-wrap;word-break:break-all}
+
 /* ── Toast ─────────────────────────────── */
 #toast{
   position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0));

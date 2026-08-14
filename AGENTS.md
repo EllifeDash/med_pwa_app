@@ -29,7 +29,7 @@ Admin creates users in Supabase Dashboard → Authentication → Users → Add u
 
 1. Add to `SHELL` array in `sw.js` (includes CDN URLs `CDN_SB`, `CDN_H2C` which are cache-first)
 2. Add `<script defer src="js/yourfile.js">` **before** `init.js` in `index.html`
-3. Bump cache version in `sw.js` (currently `mediassist-v3.9`)
+3. Bump cache version in `sw.js` (currently `mediassist-v4.0`)
 
 ## Confirm dialog
 
@@ -45,7 +45,7 @@ Use `await showConfirm('message')` in any async function instead of `confirm()`.
 
 ## Module architecture details
 
-- **`supabase.js`** (module) — creates Supabase client (`createClient` from CDN ESM), checks session via `getSession()`, drives `onAuthStateChange` (handles `TOKEN_REFRESHED` and `SIGNED_OUT`). Calls `clearListeners()` on sign-out.
+- **`supabase.js`** (module) — creates Supabase client (`createClient` from CDN ESM, pinned to `@2.47.10`), checks session via `getSession()`, drives `onAuthStateChange` (handles `TOKEN_REFRESHED`, `SIGNED_IN`/`INITIAL_SESSION`, and `SIGNED_OUT`). Session is backed up to IDB key `ma_auth_backup`; a `SIGNED_OUT` that fires while **offline** (failed token refresh in a dead-signal area) restores the backup and keeps the app usable, retrying the refresh on `online`. Intentional logout (`authSignOut()`) clears the backup first. Calls `clearListeners()` on a real sign-out.
 - **`db.js`** — data layer. Three-level read: `window._cache` → Supabase (saves to IDB) → IDB fallback. Getters: `gSet()`, `gPts()`, `gVis()`, `gSvc()`, `gHistNotes()`, `gDocs(pid)`. IDB database name: `mediassist_docs` (backward compat — do not rename). Stores: `kv` (versions 1→2 unified store). `setupListeners()` creates Realtime subscriptions on `patients` and `visits` tables filtered by `user_id`.
 - **`patients.js`** — patient list filters out `is_active === false`. `deletePatient()` cascade-deletes associated visits and docs.
 - **`offline.js`** — queue + sync. `addToOfflineQueue()`, `syncOfflineQueue()`, `refreshAllData()`. `online` event → `syncOfflineQueue()` → `refreshAllData()` → `renderBookings(true)`. `offline` event calls `_teardownChannels()`. Visit IDB key: `ma_offline_queue`.
@@ -67,9 +67,9 @@ Use `await showConfirm('message')` in any async function instead of `confirm()`.
 
 ## Service Worker
 
-- Cache version: `mediassist-v3.9` in `sw.js` — bump on any file change to force re-cache
+- Cache version: `mediassist-v4.0` in `sw.js` — bump on any file change to force re-cache
 - `caches.open(CACHE).then(c => c.addAll(SHELL))` (NOT `Promise.allSettled()` as documented before — install failure `catch` handles partial failure)
-- `SHELL` array includes `'./'`, `'./index.html'`, `'./style.css'`, `'./manifest.json'`, all `./js/*.js`, `CDN_SB` (Supabase ESM), `CDN_H2C` (html2canvas)
+- `SHELL` array includes `'./'`, `'./index.html'`, `'./style.css'`, `'./manifest.json'`, all `./js/*.js`, `CDN_SB` (Supabase ESM, pinned to `@2.47.10` — never use floating `@2`, a frozen old build inside the SW cache causes unpredictable auth), `CDN_H2C` (html2canvas)
 - Supabase API (`*.supabase.co`, `*.supabase.com`) — network-only; offline returns `{data:null, error:{message:'Offline'}}`
 - App shell / JS / CDN libs — cache-first
 - Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`) — network-first with cache fallback

@@ -47,14 +47,14 @@ If IndexedDB is blocked or throws an error (e.g., in strict private/incognito mo
 
 ### Service Worker (sw.js)
 
-**Cache version:** `mediassist-v3` (update if cache invalidation needed)
+**Cache version:** `mediassist-v4.0` (update if cache invalidation needed)
 
 **Strategies:**
 - **App shell + JS + CDN libs:** cache-first (app loads fully offline after first visit)
 - **Supabase API (`*.supabase.co`, `*.supabase.com`):** network-only (data must be live; offline handled by IDB in `db.js`)
 - **Navigation (page load):** cache-first → fallback to `index.html`
 
-**Note:** Supabase CDN library (`@supabase/supabase-js@2`) is **pre-cached** in the app shell, so offline-first data loading works from boot.
+**Note:** Supabase CDN library (`@supabase/supabase-js@2.47.10`) is **pre-cached** in the app shell, so offline-first data loading works from boot. Version is pinned (no floating `@2`) to avoid stale frozen builds inside the SW cache.
 
 ### Global State
 
