@@ -8,6 +8,14 @@
 
 async function renderSettings() {
   const s = await gSet();
+  const warn = document.getElementById('settingsProfileWarn');
+  if (warn) {
+    if (typeof isProfileComplete === 'function' && !isProfileComplete(s)) {
+      warn.style.display = 'flex';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
   document.getElementById('sName').value = s.name         || '';
   document.getElementById('sRank').value = s.rank         || '';
   document.getElementById('sBiz').value  = s.businessName || '';

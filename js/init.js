@@ -141,10 +141,26 @@ function setWelcomePhoto(b64) {
  * Navigates to the main app — no auth needed here,
  * session was already confirmed by bootApp().
  */
-function enterApp() {
+async function enterApp() {
+  const sChk = window._cache?.settings || (typeof gSet === 'function' ? await gSet() : null);
+  if (typeof isProfileComplete === 'function' && !isProfileComplete(sChk)) {
+    toast('Please complete your profile (Name & Business Name) in Settings first', 'danger');
+    document.getElementById('ws').style.display = 'none';
+    document.getElementById('app').classList.add('active');
+    if (typeof go === 'function') go('settings', null);
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    navigator.serviceWorker?.addEventListener('message', event => {
+      if (event.data?.type === 'navigate' && typeof go === 'function') {
+        go(event.data.page, null);
+      }
+    });
+    return;
+  }
   document.getElementById('ws').style.display = 'none';
   document.getElementById('app').classList.add('active');
-  go('dashboard', null);
+  if (typeof go === 'function') go('dashboard', null);
   // Request notification permission for booking alerts
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();

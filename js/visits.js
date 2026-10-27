@@ -138,6 +138,12 @@ function resetForm() {
  * automatically when the connection is restored.
  */
 async function saveVisit() {
+  const sChk = window._cache?.settings || (typeof gSet === 'function' ? await gSet() : null);
+  if (typeof isProfileComplete === 'function' && !isProfileComplete(sChk)) {
+    toast('Complete your profile (Name & Business Name) in Settings before adding patients/visits', 'danger');
+    if (typeof go === 'function') go('settings', null);
+    return;
+  }
   const name = document.getElementById('fName').value.trim();
   if (!name)                        { toast('Patient name is required', 'danger'); return; }
   if (!Object.keys(selSvcs).length) { toast('Select at least one service', 'danger'); return; }

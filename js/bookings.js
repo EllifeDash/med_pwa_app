@@ -30,10 +30,12 @@ async function updateAppointment(appointmentId, action, opts = {}) {
     return false;
   }
 
+  const handlerName = window._cache?.settings?.name || window._cache?.settings?.businessName || 'Assistant';
   const patch = {
-    status:     action,
-    handled_by: window._uid,
-    handled_at: new Date().toISOString(),
+    status:          action,
+    handled_by:      window._uid,
+    handled_by_name: handlerName,
+    handled_at:      new Date().toISOString(),
   };
 
   if (action === 'rescheduled') {
@@ -265,6 +267,8 @@ async function renderBookings(force = false) {
     const status = a.status || 'pending';
     const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
     const statusCls  = _STATUS_STYLE[status] || 'b-gray';
+    const handlerName = a.handled_by_name || a.handled_by || '';
+    const handlerLine = status !== 'pending' && handlerName ? `<div class="bk-detail-line"><span class="bk-detail-label">Handled by</span><span class="bk-detail-value">${handlerName}</span></div>` : '';
 
     const showActions = status === 'pending';
 
@@ -297,6 +301,7 @@ async function renderBookings(force = false) {
         <div class="bk-expand">
           ${svc ? `<div class="bk-detail-line"><span class="bk-detail-label">Service</span><span class="bk-detail-value">${svc}</span></div>` : ''}
           ${addr ? `<div class="bk-detail-line"><span class="bk-detail-label">Address</span><span class="bk-detail-value">${addr}</span></div>` : ''}
+          ${handlerLine}
           ${notes ? `<div class="bk-note">${notes}</div>` : ''}
           ${showActions ? `
           <hr class="divider"/>
