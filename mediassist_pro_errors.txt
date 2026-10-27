@@ -1,0 +1,55 @@
+MediAssist Pro — Access Required Screen: Reported Issues
+Source: Three screenshots from Android installed app
+
+Common screen shown in all three screenshots:
+- App name: MediAssist Pro
+- Message: “Access Required”
+- Message body: “This is a restricted system. Contact your administrator to get access.”
+- Session info panel is visible.
+
+Screenshot 1 (error01.jfif)
+- online: yes
+- session in storage: no
+- backup: none
+- mode: installed app
+- user agent shown: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/537.36 (KHTML
+- Main issue: The app displays “Access Required” even though the session reports online: yes. No session is stored locally and no backup is available.
+
+Screenshot 2 (error02.jfif)
+- online: yes
+- session in storage: no
+- backup: mrazzaq1122@gmail.com @ 2026-08-16T20:07:53.796Z
+- mode: installed app
+- user agent shown: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML
+- Main issue: The app displays “Access Required” despite a backup entry being present. The session is not stored locally.
+
+Screenshot 3 (error03.jfif)
+- online: yes
+- session in storage: no
+- backup: aeikay99@gmail.com @ 2026-10-21T14:02:29.862Z
+- mode: installed app
+- user agent shown: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML
+- Main issue: Same access-denied screen. A backup entry exists for a different email and timestamp, but no session is stored locally.
+
+Notes for investigation:
+1. All screenshots report the app is online and running in installed-app mode.
+2. All screenshots report “session in storage: no”.
+3. Backup status differs: none in screenshot 1; a backup record exists in screenshots 2 and 3.
+4. Check why the app cannot establish or restore an authorized session, whether backup identity/email matching is expected, and whether session persistence or access validation is failing.
+5. The user-agent text is visibly truncated in the screenshots, so the complete value is not available.
+
+
+---
+
+Session Fix Log - 2025-10-27
+--------------------------------
+Fix applied in js/supabase.js:
+- __bootApp() now auto-restores session from IndexedDB backup (ma_auth_backup) when localStorage is missing/wiped
+- After restoring to localStorage, re-reads session; if still missing and online, attempts refreshSession()
+- If offline with backup but cannot refresh, boots app from backup user using cached data (offline-first)
+- onAuthStateChange SIGNED_OUT (offline): rescues access-denied screen by booting from backup
+- online event: added rescue path to restore/refresh and boot if stuck on access-denied
+
+Root cause addressed: cold start did not consult backup. Recovery only triggered on SIGNED_OUT while offline. Now backup is checked on boot.
+
+Result: Android PWA users with wiped localStorage but existing IDB backup can auto-restore without showing Access Required.
