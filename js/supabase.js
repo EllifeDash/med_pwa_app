@@ -109,16 +109,84 @@ async function _restoreSessionFromBackup() {
 // Module scripts execute before defer scripts, so the
 // session check must be deferred to init.js where
 // bootApp / showAccessDenied are defined.
+//
+// FIX: Auto-restore from IndexedDB backup on cold start when localStorage is wiped
+// (common on Android PWAs). Also try refreshSession() if online.
 window.__bootApp = async function () {
-  const { data: { session } } = await _sb.auth.getSession();
+  let session = null;
+
+  // 1) Try normal session from localStorage
+  try {
+    const res = await _sb.auth.getSession();
+    session = res?.data?.session || null;
+  } catch (_) {
+    session = null;
+  }
+
+  // 2) If no session, try to restore from backup
+  if (!session?.user) {
+    try {
+      const backup = await _getSessionBackup();
+      if (backup?.session?.refresh_token) {
+        const restored = await _restoreSessionFromBackup();
+        if (restored) {
+          // Re-read session after writing to localStorage
+          try {
+            const res2 = await _sb.auth.getSession();
+            session = res2?.data?.session || null;
+          } catch (_) {
+            session = null;
+          }
+
+          // If still no session and online, try to refresh
+          if (!session?.user && typeof navigator !== 'undefined' && navigator.onLine) {
+            try {
+              const r = await _sb.auth.refreshSession();
+              session = r?.data?.session || null;
+            } catch (_) {
+              session = null;
+            }
+          }
+
+          if (session?.user) {
+            _recovering = (typeof navigator !== 'undefined' && navigator.onLine) ? false : true;
+            try { await _saveSessionBackup(session); } catch (_) {}
+          } else if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            // Offline with backup but couldn't refresh - boot from backup user using cached data
+            _recovering = true;
+            window._uid = backup.session.user?.id || window._uid;
+            if (typeof window.bootApp === 'function' && backup.session.user) {
+              try {
+                await window.bootApp(backup.session.user);
+              } catch (e) {
+                console.warn('[auth] bootApp from backup failed:', e);
+              }
+              return;
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // Non-fatal, fall through to denied
+    }
+  }
 
   if (session?.user) {
     window._uid = session.user.id;
-    _saveSessionBackup(session);
-    if (typeof window.bootApp === 'function') await window.bootApp(session.user);
-  } else {
-    window._uid = null;
-    if (typeof window.showAccessDenied === 'function') window.showAccessDenied();
+    try { await _saveSessionBackup(session); } catch (_) {}
+    if (typeof window.bootApp === 'function') {
+      try {
+        await window.bootApp(session.user);
+        return;
+      } catch (e) {
+        console.warn('[auth] bootApp failed:', e);
+      }
+    }
+  }
+
+  window._uid = null;
+  if (typeof window.showAccessDenied === 'function') {
+    try { window.showAccessDenied(); } catch (_) {}
   }
 };
 
@@ -141,10 +209,23 @@ _sb.auth.onAuthStateChange(async (event, session) => {
     // Offline sign-out = almost certainly a refresh that failed
     // because there is no signal (supabase-js destroys the session
     // on ANY refresh error). The server-side refresh token is still
-    // valid — restore the backup and retry once we're back online.
+    // valid �?" restore the backup and retry once we're back online.
     if (offline && (await _restoreSessionFromBackup())) {
       _recovering = true;
-      console.warn('[auth] signed-out while offline — session restored from backup, will refresh on reconnect');
+      console.warn('[auth] signed-out while offline �?" session restored from backup, will refresh on reconnect');
+      // If the access-denied screen is already visible (race with __bootApp), boot from backup
+      try {
+        const accessDeniedEl = typeof document !== 'undefined' ? document.getElementById('accessDenied') : null;
+        if (accessDeniedEl && accessDeniedEl.style.display !== 'none') {
+          const backup = await _getSessionBackup();
+          const user = backup?.session?.user || null;
+          if (user && typeof window.bootApp === 'function') {
+            window._uid = user.id;
+            try { await window.bootApp(user); } catch (_) {}
+            return;
+          }
+        }
+      } catch (_) {}
       return; // keep the app usable offline; do NOT wipe cache or show denied
     }
 
@@ -160,18 +241,72 @@ _sb.auth.onAuthStateChange(async (event, session) => {
 // refreshSession() reads the (restored) session from storage
 // and exchanges the refresh token server-side.
 window.addEventListener('online', async () => {
-  if (!_recovering) return; // normal signed-in flow already auto-refreshes
+  if (!_recovering) {
+    // Even if not marked recovering, try to rescue if stuck on denied screen with backup
+    try {
+      const accessDeniedEl = typeof document !== 'undefined' ? document.getElementById('accessDenied') : null;
+      if (accessDeniedEl && accessDeniedEl.style.display !== 'none') {
+        // Check if we have a session now
+        let session = null;
+        try {
+          const res = await _sb.auth.getSession();
+          session = res?.data?.session || null;
+        } catch (_) {}
+        if (session?.user) {
+          window._uid = session.user.id;
+          try { await _saveSessionBackup(session); } catch (_) {}
+          if (typeof window.bootApp === 'function') {
+            try { await window.bootApp(session.user); return; } catch (_) {}
+          }
+        } else {
+          // Try backup
+          try {
+            const backup = await _getSessionBackup();
+            if (backup?.session?.refresh_token) {
+              const restored = await _restoreSessionFromBackup();
+              if (restored) {
+                try {
+                  const r2 = await _sb.auth.refreshSession();
+                  if (r2?.data?.session?.user) {
+                    window._uid = r2.data.session.user.id;
+                    try { await _saveSessionBackup(r2.data.session); } catch (_) {}
+                    if (typeof window.bootApp === 'function') {
+                      try { await window.bootApp(r2.data.session.user); return; } catch (_) {}
+                    }
+                  }
+                } catch (_) {}
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+    return; // normal signed-in flow already auto-refreshes
+  }
   _recovering = false;
   try {
     const { data: { session }, error } = await _sb.auth.refreshSession();
     if (!error && session?.user) {
       window._uid = session.user.id;
-      if (typeof window.bootApp === 'function') await window.bootApp(session.user);
-    } else if (typeof window.showAccessDenied === 'function') {
-      window.showAccessDenied();
+      try { await _saveSessionBackup(session); } catch (_) {}
+      if (typeof window.bootApp === 'function') {
+        try { await window.bootApp(session.user); return; } catch (_) {}
+      }
     }
-  } catch (_) {
-    if (typeof window.showAccessDenied === 'function') window.showAccessDenied();
+  } catch (_) {}
+  // If still stuck, try one more time to boot from backup if present
+  try {
+    const backup = await _getSessionBackup();
+    if (backup?.session?.user && typeof window.bootApp === 'function') {
+      const accessDeniedEl = typeof document !== 'undefined' ? document.getElementById('accessDenied') : null;
+      if (accessDeniedEl && accessDeniedEl.style.display !== 'none') {
+        window._uid = backup.session.user.id;
+        try { await window.bootApp(backup.session.user); return; } catch (_) {}
+      }
+    }
+  } catch (_) {}
+  if (typeof window.showAccessDenied === 'function') {
+    try { window.showAccessDenied(); } catch (_) {}
   }
 });
 
